@@ -1,0 +1,8 @@
+database:
+  host: "localhost"
+  port: "5432"
+  user: "postgres"
+  pass: "postgres"
+  dbname: "public"
+  sslmode: "disable"
+  loglevel: 4 # 1 = Silent, 2 = Error, 3 = Warn, 4 = Info
