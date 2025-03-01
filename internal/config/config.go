@@ -45,7 +45,8 @@ func InitConfig() {
 	configDir := filepath.Dir(filename)
 	configFilePath := filepath.Join(configDir, "config.yml")
 
-	configFile, err := os.Open(configFilePath)
+	cleanPath := filepath.Clean(configFilePath)
+	configFile, err := os.Open(cleanPath)
 	if err != nil {
 		log.Fatalf("Failed to open config file: %v", err)
 	}
