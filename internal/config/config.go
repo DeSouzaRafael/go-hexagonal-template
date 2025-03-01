@@ -10,7 +10,19 @@ import (
 )
 
 type Config struct {
-	Database DBConfig `yaml:"database"`
+	Database    DBConfig   `yaml:"database"`
+	Jwt         JWT        `yaml:"jwt"`
+	Environment string     `yaml:"environment"`
+	WebService  WebService `yaml:"webservice"`
+}
+
+type WebService struct {
+	Port string `yaml:"port"`
+}
+
+type JWT struct {
+	Secret     string `yaml:"secret"`
+	Expiration int    `yaml:"expiration"`
 }
 
 type DBConfig struct {

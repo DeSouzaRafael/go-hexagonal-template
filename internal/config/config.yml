@@ -1,3 +1,5 @@
+environment: "local"
+
 database:
   host: "localhost"
   port: "5432"
@@ -6,3 +8,10 @@ database:
   dbname: "public"
   sslmode: "disable"
   loglevel: 4 # 1 = Silent, 2 = Error, 3 = Warn, 4 = Info
+
+jwt:
+  secret: "your-secret-key"
+  expiration: 3600 # 1 hour
+
+webservice:
+  port: 3200
