@@ -1,6 +1,7 @@
 package web
 
 import (
+	"github.com/DeSouzaRafael/go-hexagonal-template/internal/adapters/web/handler"
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/adapters/web/router"
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/config"
 	"github.com/labstack/echo/v4"
@@ -10,10 +11,10 @@ type WebService struct {
 	Echo *echo.Echo
 }
 
-func NewWebService() *WebService {
+func NewWebService(uh *handler.UserHandler) *WebService {
 	e := echo.New()
 
-	router.InitRouter(e)
+	router.InitRouter(e, uh)
 
 	return &WebService{Echo: e}
 }

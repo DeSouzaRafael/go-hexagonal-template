@@ -1,4 +1,4 @@
-package models
+package domain
 
 import (
 	"time"
@@ -14,13 +14,4 @@ type User struct {
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
-}
-
-func (User) TableName() string {
-	return "users"
-}
-
-func (user *User) BeforeCreate(tx *gorm.DB) (err error) {
-	user.ID = uuid.New()
-	return
 }
