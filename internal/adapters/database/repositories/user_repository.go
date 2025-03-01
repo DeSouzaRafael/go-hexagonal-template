@@ -1,17 +1,16 @@
 package repositories
 
 import (
-	"github.com/DeSouzaRafael/go-hexagonal-template/internal/adapters/database/models"
-	"github.com/DeSouzaRafael/go-hexagonal-template/internal/ports"
+	"github.com/DeSouzaRafael/go-hexagonal-template/internal/core/domain"
 	"gorm.io/gorm"
 )
 
-type UserRepositoryGORM struct {
-	*RepositoryGORM[models.User]
+type UserRepo struct {
+	*RepositoryGORM[domain.User]
 }
 
-func NewUserRepositoryGORM(db *gorm.DB) ports.UserRepository {
-	return &UserRepositoryGORM{
-		RepositoryGORM: NewRepositoryGORM[models.User](db),
+func NewUserRepository(db *gorm.DB) *UserRepo {
+	return &UserRepo{
+		RepositoryGORM: NewRepositoryGORM[domain.User](db),
 	}
 }
