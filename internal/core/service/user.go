@@ -23,42 +23,32 @@ func NewUserService(repo port.UserRepository) UserService {
 func (us *UserService) Register(ctx context.Context, user *domain.User) (*domain.User, error) {
 	hashedPassword, err := util.HashPassword(user.Password)
 	if err != nil {
-		return nil, domain.ErrInternal
+		return nil, err
 	}
 
 	user.Password = hashedPassword
 
 	user, err = us.repo.Create(ctx, user)
 	if err != nil {
-		if err == domain.ErrConflictingData {
-			return nil, err
-		}
-		return nil, domain.ErrInternal
+		return nil, err
 	}
 
 	return user, nil
 }
 
 func (us *UserService) GetUser(ctx context.Context, id string) (*domain.User, error) {
-	var user *domain.User
-
 	user, err := us.repo.Get(ctx, uuid.MustParse(id))
 	if err != nil {
-		if err == domain.ErrDataNotFound {
-			return nil, err
-		}
-		return nil, domain.ErrInternal
+		return nil, domain.ErrDataNotFound
 	}
 
 	return user, nil
 }
 
 func (us *UserService) ListUsers(ctx context.Context) ([]domain.User, error) {
-	var users []domain.User
-
 	users, err := us.repo.List(ctx)
 	if err != nil {
-		return nil, domain.ErrInternal
+		return nil, err
 	}
 
 	return users, nil
@@ -67,36 +57,22 @@ func (us *UserService) ListUsers(ctx context.Context) ([]domain.User, error) {
 func (us *UserService) UpdateUser(ctx context.Context, user *domain.User) (*domain.User, error) {
 	existingUser, err := us.repo.Get(ctx, user.ID)
 	if err != nil {
-		if err == domain.ErrDataNotFound {
-			return nil, err
-		}
-		return nil, domain.ErrInternal
+		return nil, domain.ErrDataNotFound
 	}
 
-	emptyData := user.Name == "" &&
-		user.Password == ""
-	sameData := existingUser.Name == user.Name
-	if emptyData || sameData {
-		return nil, domain.ErrNoUpdatedData
+	if user.Name == "" {
+		user.Name = existingUser.Name
 	}
-
-	var hashedPassword string
 
 	if user.Password != "" {
-		hashedPassword, err = util.HashPassword(user.Password)
-		if err != nil {
-			return nil, domain.ErrInternal
-		}
+		user.Password, _ = util.HashPassword(user.Password)
+	} else {
+		user.Password = existingUser.Password
 	}
-
-	user.Password = hashedPassword
 
 	err = us.repo.Update(ctx, user)
 	if err != nil {
-		if err == domain.ErrConflictingData {
-			return nil, err
-		}
-		return nil, domain.ErrInternal
+		return nil, err
 	}
 
 	return user, nil
@@ -105,10 +81,7 @@ func (us *UserService) UpdateUser(ctx context.Context, user *domain.User) (*doma
 func (us *UserService) DeleteUser(ctx context.Context, id string) error {
 	_, err := us.repo.Get(ctx, uuid.MustParse(id))
 	if err != nil {
-		if err == domain.ErrDataNotFound {
-			return err
-		}
-		return domain.ErrInternal
+		return domain.ErrDataNotFound
 	}
 
 	return us.repo.Delete(ctx, uuid.MustParse(id))

@@ -24,7 +24,7 @@ func (repo *RepositoryGORM[T]) Get(ctx context.Context, id interface{}) (*T, err
 
 func (r *RepositoryGORM[T]) List(ctx context.Context) ([]T, error) {
 	var domain []T
-	result := r.db.WithContext(ctx).Find(domain)
+	result := r.db.WithContext(ctx).Find(&domain)
 	return domain, result.Error
 }
 
