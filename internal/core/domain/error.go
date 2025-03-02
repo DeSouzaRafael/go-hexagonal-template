@@ -6,6 +6,7 @@ import (
 
 var (
 	ErrInternal        = errors.New("internal error")
+	ErrInvalidPassword = errors.New("the password cannot be left empty")
 	ErrDataNotFound    = errors.New("data not found")
 	ErrNoUpdatedData   = errors.New("no data to update")
 	ErrConflictingData = errors.New("data conflicts with existing data in unique column")

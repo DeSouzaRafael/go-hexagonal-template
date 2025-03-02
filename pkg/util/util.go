@@ -2,6 +2,7 @@ package util
 
 import (
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/config"
+	"github.com/DeSouzaRafael/go-hexagonal-template/internal/core/domain"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -10,11 +11,11 @@ func CurrentExecutionEnvironmentProduction() bool {
 }
 
 func HashPassword(password string) (string, error) {
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return "", err
+	if password == "" {
+		return "", domain.ErrInvalidPassword
 	}
 
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	return string(hashedPassword), nil
 }
 
