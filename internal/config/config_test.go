@@ -23,6 +23,7 @@ jwt:
 environment: "test"
 webservice:
   port: "8080"
+  domain: "yourdomain.com"
 `
 
 func getTestConfigPath(t *testing.T) string {

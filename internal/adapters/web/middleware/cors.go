@@ -1,6 +1,9 @@
 package middleware
 
 import (
+	"fmt"
+
+	"github.com/DeSouzaRafael/go-hexagonal-template/internal/config"
 	"github.com/DeSouzaRafael/go-hexagonal-template/pkg/util"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -14,7 +17,7 @@ func CorsConfig() middleware.CORSConfig {
 	}
 
 	if util.CurrentExecutionEnvironmentProduction() {
-		cc.AllowOrigins = []string{"https://*.yourdomain.com"}
+		cc.AllowOrigins = []string{fmt.Sprintf("https://*.%s", config.AppConfig.WebService.Domain)}
 	} else {
 		cc.AllowOrigins = []string{"*"}
 	}

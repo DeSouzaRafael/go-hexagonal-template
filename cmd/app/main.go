@@ -15,13 +15,13 @@ func main() {
 
 	config.InitConfig()
 
-	db, err := database.NewConnection()
+	db, err := database.NewDatabaseAdapter(config.AppConfig.Database)
 	if err != nil {
 		panic(err)
 	}
 	defer db.Close()
 
-	userRepository := repositories.NewUserRepository(db.DB)
+	userRepository := repositories.NewUserRepository(db)
 	userService := service.NewUserService(userRepository)
 	userHandler := handler.NewUserHandler(&userService)
 
