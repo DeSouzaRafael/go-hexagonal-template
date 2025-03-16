@@ -15,3 +15,4 @@ jwt:
 
 webservice:
   port: 3200
+  domain: yourdomain.com

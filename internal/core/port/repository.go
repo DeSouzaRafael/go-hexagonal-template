@@ -4,9 +4,7 @@ import (
 	"context"
 )
 
-type Domain interface{}
-
-type Repository[T Domain] interface {
+type Repository[T any] interface {
 	Get(ctx context.Context, id interface{}) (*T, error)
 	List(ctx context.Context) ([]T, error)
 	Create(ctx context.Context, domain *T) (*T, error)

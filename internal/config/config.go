@@ -17,7 +17,8 @@ type Config struct {
 }
 
 type WebService struct {
-	Port string `yaml:"port"`
+	Port   string `yaml:"port"`
+	Domain string `yaml:"domain"`
 }
 
 type JWT struct {
