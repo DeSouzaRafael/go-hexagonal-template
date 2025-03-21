@@ -24,7 +24,9 @@ func main() {
 	}
 	defer db.Close()
 
-	db.AutoMigrate(&domain.User{})
+	if err := db.AutoMigrate(&domain.User{}); err != nil {
+		panic("Error migrating database: " + err.Error())
+	}
 
 	userRepository := repositories.NewUserRepository(db)
 	authService := service.NewAuthService(userRepository)
