@@ -19,30 +19,6 @@ func NewUserHandler(svc port.UserService) *UserHandler {
 	}
 }
 
-type registerRequest struct {
-	Name     string `json:"name" binding:"required" example:"John Doe"`
-	Password string `json:"password" binding:"required,min=8" example:"12345678"`
-}
-
-func (uh *UserHandler) Register(ctx echo.Context) error {
-	var req registerRequest
-	if err := ctx.Bind(&req); err != nil {
-		return ctx.JSON(http.StatusBadRequest, err.Error())
-	}
-
-	user := domain.User{
-		Name:     req.Name,
-		Password: req.Password,
-	}
-
-	_, err := uh.svc.Register(ctx.Request().Context(), &user)
-	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
-	}
-
-	return ctx.JSON(http.StatusCreated, user)
-}
-
 func (uh *UserHandler) GetUser(ctx echo.Context) error {
 	id := ctx.Param("id")
 

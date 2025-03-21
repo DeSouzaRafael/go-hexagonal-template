@@ -12,6 +12,7 @@ import (
 func InitRouter(
 	e *echo.Echo,
 	userHandler *handler.UserHandler,
+	authHandler *handler.AuthHandler,
 ) {
 	e.Use(echoMiddleware.CORSWithConfig(middleware.CorsConfig()))
 	e.Use(echoMiddleware.Recover(), echoMiddleware.Logger())
@@ -20,13 +21,15 @@ func InitRouter(
 	authV1 := v1.Group("", middleware.Middleware)
 	authV1.GET("/profile", getUserProfile)
 
-	user := v1.Group("/users")
-	authUser := authV1.Group("/users")
-	user.POST("/", userHandler.Register)
-	authUser.GET("/", userHandler.ListUsers)
-	authUser.GET("/:id", userHandler.GetUser)
-	authUser.PUT("/:id", userHandler.UpdateUser)
-	authUser.DELETE("/:id", userHandler.DeleteUser)
+	user := authV1.Group("/users")
+	user.GET("", userHandler.ListUsers)
+	user.GET("/:id", userHandler.GetUser)
+	user.PUT("/:id", userHandler.UpdateUser)
+	user.DELETE("/:id", userHandler.DeleteUser)
+
+	auth := v1.Group("/auth")
+	auth.POST("/register", authHandler.Register)
+	auth.POST("/login", authHandler.Login)
 }
 
 func getUserProfile(c echo.Context) error {

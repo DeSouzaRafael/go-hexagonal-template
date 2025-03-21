@@ -30,6 +30,12 @@ func (m *MockUserService) GetUser(ctx context.Context, id string) (*domain.User,
 	return args.Get(0).(*domain.User), args.Error(1)
 }
 
+func (m *MockUserService) GetUserByName(ctx context.Context, name string) (*domain.User, error) {
+	args := m.Called(ctx, name)
+
+	return args.Get(0).(*domain.User), args.Error(1)
+}
+
 func (m *MockUserService) ListUsers(ctx context.Context) ([]domain.User, error) {
 	args := m.Called(ctx)
 	return args.Get(0).([]domain.User), args.Error(1)
@@ -43,31 +49,6 @@ func (m *MockUserService) UpdateUser(ctx context.Context, user *domain.User) (*d
 func (m *MockUserService) DeleteUser(ctx context.Context, id string) error {
 	args := m.Called(ctx, id)
 	return args.Error(0)
-}
-
-func TestRegister(t *testing.T) {
-	mockSvc := new(MockUserService)
-	h := handler.NewUserHandler(mockSvc)
-	e := echo.New()
-
-	t.Run("success", func(t *testing.T) {
-		user := &domain.User{
-			Name:     "Test User",
-			Password: "password123",
-		}
-
-		mockSvc.On("Register", mock.Anything, mock.Anything).Return(user, nil)
-
-		reqBody := `{"name":"Test User","password":"password123"}`
-		req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(reqBody))
-		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-		rec := httptest.NewRecorder()
-		c := e.NewContext(req, rec)
-
-		err := h.Register(c)
-		assert.NoError(t, err)
-		assert.Equal(t, http.StatusCreated, rec.Code)
-	})
 }
 
 func TestGetUser(t *testing.T) {

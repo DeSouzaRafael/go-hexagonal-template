@@ -11,8 +11,6 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-var secretKey = []byte(config.AppConfig.Jwt.Secret)
-
 func Middleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		authHeader := c.Request().Header.Get("Authorization")
@@ -27,6 +25,8 @@ func Middleware(next echo.HandlerFunc) echo.HandlerFunc {
 
 		tokenString := parts[1]
 		claims := &jwt.RegisteredClaims{}
+
+		secretKey := []byte(config.AppConfig.Jwt.Secret)
 
 		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 			return secretKey, nil
@@ -52,6 +52,8 @@ func GenerateJWT(userID string) (string, error) {
 		ExpiresAt: jwt.NewNumericDate(expirationTime),
 		IssuedAt:  jwt.NewNumericDate(time.Now()),
 	}
+
+	secretKey := []byte(config.AppConfig.Jwt.Secret)
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(secretKey)

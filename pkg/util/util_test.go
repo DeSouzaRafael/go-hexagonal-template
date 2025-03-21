@@ -10,14 +10,14 @@ import (
 )
 
 func TestCurrentExecutionEnvironmentProduction(t *testing.T) {
-	config.AppConfig = &config.Config{Environment: "prd"}
+	config.AppConfig = &config.Config{App: config.App{Name: "app", Environment: "production"}}
 
 	// Success environment prd
 	result := util.CurrentExecutionEnvironmentProduction()
 	assert.True(t, result)
 
 	// Another environment
-	config.AppConfig.Environment = "dev"
+	config.AppConfig.App.Environment = "development"
 	result = util.CurrentExecutionEnvironmentProduction()
 	assert.False(t, result)
 }
