@@ -23,14 +23,14 @@ func NewDatabaseAdapter(config config.DBConfig) (port.Database, error) {
 		config: config,
 	}
 
-	if err := adapter.connect(); err != nil {
+	if err := adapter.Connect(); err != nil {
 		return nil, err
 	}
 
 	return adapter, nil
 }
 
-func (d *DatabaseAdapter) connect() error {
+func (d *DatabaseAdapter) Connect() error {
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
 		d.config.Host, d.config.User, d.config.Pass, d.config.DBName, d.config.Port, d.config.SSLMode,

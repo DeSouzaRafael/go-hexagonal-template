@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: go-hex-app
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - APP_NAME=go-hexagonal-template
+      - APP_ENV=development
+      - WEB_PORT=8080
+      - WEB_DOMAIN=localhost
+      - JWT_SECRET=seu-secret-key-seguro
+      - JWT_EXPIRATION=24
+      - DB_HOST=postgres
+      - DB_PORT=5434
+      - DB_USER=postgres
+      - DB_PASS=postgres
+      - DB_NAME=hexagonal
+      - DB_SSL_MODE=disable
+      - DB_LOG_LEVEL=1
+    depends_on:
+      - postgres
+    networks:
+      - go-hex-network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: go-hex-db
+    restart: unless-stopped
+    ports:
+      - "5434:5432" # Alterado de 5433 para 5434
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: hexagonal
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - go-hex-network
+
+volumes:
+  postgres_data:
+
+networks:
+  go-hex-network:
+    driver: bridge

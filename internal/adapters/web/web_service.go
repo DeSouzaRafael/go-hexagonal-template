@@ -11,10 +11,10 @@ type WebService struct {
 	Echo *echo.Echo
 }
 
-func NewWebService(uh *handler.UserHandler) *WebService {
+func NewWebService(uh *handler.UserHandler, ah *handler.AuthHandler) *WebService {
 	e := echo.New()
 
-	router.InitRouter(e, uh)
+	router.InitRouter(e, uh, ah)
 
 	return &WebService{Echo: e}
 }

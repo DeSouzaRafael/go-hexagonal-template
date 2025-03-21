@@ -1,62 +1,77 @@
 package config
 
 import (
-	"log"
 	"os"
-	"path/filepath"
-	"runtime"
+	"strconv"
 
-	"gopkg.in/yaml.v2"
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
-	Database    DBConfig   `yaml:"database"`
-	Jwt         JWT        `yaml:"jwt"`
-	Environment string     `yaml:"environment"`
-	WebService  WebService `yaml:"webservice"`
+	Database   DBConfig
+	Jwt        JWT
+	App        App
+	WebService WebService
+}
+
+type App struct {
+	Name        string
+	Environment string
 }
 
 type WebService struct {
-	Port   string `yaml:"port"`
-	Domain string `yaml:"domain"`
+	Port   string
+	Domain string
 }
 
 type JWT struct {
-	Secret     string `yaml:"secret"`
-	Expiration int    `yaml:"expiration"`
+	Secret     string
+	Expiration int
 }
 
 type DBConfig struct {
-	Host     string `yaml:"host"`
-	Port     string `yaml:"port"`
-	User     string `yaml:"user"`
-	Pass     string `yaml:"pass"`
-	DBName   string `yaml:"dbname"`
-	SSLMode  string `yaml:"sslmode"`
-	LogLevel int    `yaml:"loglevel"`
+	Host     string
+	Port     string
+	User     string
+	Pass     string
+	DBName   string
+	SSLMode  string
+	LogLevel int
 }
 
 var AppConfig *Config
 
-func InitConfig() {
-	_, filename, _, ok := runtime.Caller(0)
-	if !ok {
-		log.Fatalf("Failed to get current filename")
+func LoadConfig() error {
+	if err := godotenv.Load(); err != nil && !os.IsNotExist(err) {
+		return err
 	}
-	configDir := filepath.Dir(filename)
-	configFilePath := filepath.Join(configDir, "config.yml")
 
-	cleanPath := filepath.Clean(configFilePath)
-	configFile, err := os.Open(cleanPath)
-	if err != nil {
-		log.Fatalf("Failed to open config file: %v", err)
-	}
-	defer configFile.Close()
+	logLevel, _ := strconv.Atoi(os.Getenv("DB_LOG_LEVEL"))
+	jwtExpiration, _ := strconv.Atoi(os.Getenv("JWT_EXPIRATION"))
 
-	decoder := yaml.NewDecoder(configFile)
-	AppConfig = &Config{}
-	err = decoder.Decode(AppConfig)
-	if err != nil {
-		log.Fatalf("Failed to decode config file: %v", err)
+	AppConfig = &Config{
+		App: App{
+			Name:        os.Getenv("APP_NAME"),
+			Environment: os.Getenv("APP_ENV"),
+		},
+		WebService: WebService{
+			Port:   os.Getenv("WEB_PORT"),
+			Domain: os.Getenv("WEB_DOMAIN"),
+		},
+		Jwt: JWT{
+			Secret:     os.Getenv("JWT_SECRET"),
+			Expiration: jwtExpiration,
+		},
+		Database: DBConfig{
+			Host:     os.Getenv("DB_HOST"),
+			Port:     os.Getenv("DB_PORT"),
+			User:     os.Getenv("DB_USER"),
+			Pass:     os.Getenv("DB_PASS"),
+			DBName:   os.Getenv("DB_NAME"),
+			SSLMode:  os.Getenv("DB_SSL_MODE"),
+			LogLevel: logLevel,
+		},
 	}
+
+	return nil
 }
