@@ -3,21 +3,21 @@ package main
 import (
 	"log"
 
+	container "github.com/DeSouzaRafael/go-hexagonal-template/internal"
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/adapters/database"
-	"github.com/DeSouzaRafael/go-hexagonal-template/internal/adapters/database/repositories"
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/adapters/web"
-	"github.com/DeSouzaRafael/go-hexagonal-template/internal/adapters/web/handler"
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/config"
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/core/domain"
-	"github.com/DeSouzaRafael/go-hexagonal-template/internal/core/service"
 )
 
 func main() {
 
+	// Load settings
 	if err := config.LoadConfig(); err != nil {
-		panic("Erro ao carregar configurações: " + err.Error())
+		panic("Error loading settings: " + err.Error())
 	}
 
+	// Init database
 	db, err := database.NewDatabaseAdapter(config.AppConfig.Database)
 	if err != nil {
 		panic(err)
@@ -28,12 +28,10 @@ func main() {
 		panic("Error migrating database: " + err.Error())
 	}
 
-	userRepository := repositories.NewUserRepository(db)
-	authService := service.NewAuthService(userRepository)
-	authHandler := handler.NewAuthHandler(&authService)
-	userService := service.NewUserService(userRepository)
-	userHandler := handler.NewUserHandler(&userService)
+	// Init container
+	cont := container.NewContainer(db)
 
-	server := web.NewWebService(userHandler, authHandler)
+	// Init web service
+	server := web.NewWebService(cont.Handlers)
 	log.Fatal(server.Start())
 }
