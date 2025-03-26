@@ -17,12 +17,12 @@ func AuthRouter(group *echo.Group, handlers container.Handlers) {
 	protectedAuthV1 := authV1.Group("", middleware.Middleware)
 
 	// Set up the auth routes
-	protectedAuthV1.GET("/profile", getUserProfile)
+	protectedAuthV1.GET("/profile", GetUserProfile)
 	authV1.POST("/register", handlers.AuthHandler.Register)
 	authV1.POST("/login", handlers.AuthHandler.Login)
 }
 
-func getUserProfile(c echo.Context) error {
+func GetUserProfile(c echo.Context) error {
 	userID := c.Get("user_id").(string)
 	return c.JSON(http.StatusOK, map[string]string{"message": "User profile", "user_id": userID})
 }

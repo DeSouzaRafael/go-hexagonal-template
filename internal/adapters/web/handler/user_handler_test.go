@@ -26,13 +26,11 @@ func (m *MockUserService) Register(ctx context.Context, user *domain.User) (*dom
 
 func (m *MockUserService) GetUser(ctx context.Context, id string) (*domain.User, error) {
 	args := m.Called(ctx, id)
-
 	return args.Get(0).(*domain.User), args.Error(1)
 }
 
 func (m *MockUserService) GetUserByName(ctx context.Context, name string) (*domain.User, error) {
 	args := m.Called(ctx, name)
-
 	return args.Get(0).(*domain.User), args.Error(1)
 }
 
