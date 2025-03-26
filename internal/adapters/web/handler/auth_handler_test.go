@@ -76,6 +76,23 @@ func TestRegister(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusInternalServerError, rec.Code)
 	})
+
+	t.Run("invalid binding", func(t *testing.T) {
+		mockService := new(AuthService)
+		h := handler.NewAuthHandler(mockService)
+		e := echo.New()
+
+		invalidBody := []byte(`{"name": 123, "password": true}`)
+
+		req := httptest.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(invalidBody))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+
+		err := h.Register(c)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+	})
 }
 
 func TestLogin(t *testing.T) {
@@ -123,5 +140,22 @@ func TestLogin(t *testing.T) {
 		err := h.Login(c)
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusUnauthorized, rec.Code)
+	})
+
+	t.Run("invalid binding", func(t *testing.T) {
+		mockService := new(AuthService)
+		h := handler.NewAuthHandler(mockService)
+		e := echo.New()
+
+		invalidBody := []byte(`{"name": 123, "password": true}`)
+
+		req := httptest.NewRequest(http.MethodPost, "/login", bytes.NewBuffer(invalidBody))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+
+		err := h.Login(c)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
 	})
 }
