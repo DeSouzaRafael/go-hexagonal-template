@@ -1,20 +1,31 @@
 package web
 
 import (
-	"github.com/DeSouzaRafael/go-hexagonal-template/internal/adapters/web/handler"
+	container "github.com/DeSouzaRafael/go-hexagonal-template/internal"
+	"github.com/DeSouzaRafael/go-hexagonal-template/internal/adapters/web/middleware"
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/adapters/web/router"
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/config"
 	"github.com/labstack/echo/v4"
+	echoMiddleware "github.com/labstack/echo/v4/middleware"
 )
 
 type WebService struct {
 	Echo *echo.Echo
 }
 
-func NewWebService(uh *handler.UserHandler) *WebService {
+func NewWebService(h container.Handlers) *WebService {
 	e := echo.New()
 
-	router.InitRouter(e, uh)
+	// Middlewares configuration for the echo instanc
+	e.Use(echoMiddleware.CORSWithConfig(middleware.CorsConfig()))
+	e.Use(echoMiddleware.Recover(), echoMiddleware.Logger())
+
+	// Grouping routes
+	g := e.Group("/api")
+
+	// Set up the routes
+	router.AuthRouter(g, h)
+	router.UserRouter(g, h)
 
 	return &WebService{Echo: e}
 }

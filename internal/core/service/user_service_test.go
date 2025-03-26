@@ -8,7 +8,6 @@ import (
 
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/core/domain"
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/core/service"
-	"github.com/DeSouzaRafael/go-hexagonal-template/pkg/util"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -28,6 +27,11 @@ func (m *MockUserRepository) Get(ctx context.Context, id interface{}) (*domain.U
 	return args.Get(0).(*domain.User), args.Error(1)
 }
 
+func (m *MockUserRepository) GetUserByName(ctx context.Context, name string) (*domain.User, error) {
+	args := m.Called(ctx, name)
+	return args.Get(0).(*domain.User), args.Error(1)
+}
+
 func (m *MockUserRepository) List(ctx context.Context) ([]domain.User, error) {
 	fmt.Println("List function called")
 	args := m.Called(ctx)
@@ -42,45 +46,6 @@ func (m *MockUserRepository) Update(ctx context.Context, user *domain.User) erro
 func (m *MockUserRepository) Delete(ctx context.Context, id interface{}) error {
 	args := m.Called(ctx, id)
 	return args.Error(0)
-}
-
-func TestRegister(t *testing.T) {
-	repo := new(MockUserRepository)
-	service := service.NewUserService(repo)
-	ctx := context.Background()
-
-	user := &domain.User{
-		ID:       uuid.New(),
-		Name:     "Rafa S",
-		Password: "",
-	}
-
-	// Failure - invalid password
-	result, err := service.Register(ctx, user)
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.Equal(t, domain.ErrInvalidPassword, err)
-
-	user.Password = "Password123"
-	hashedPassword, _ := util.HashPassword(user.Password)
-	expectedUser := *user
-	expectedUser.Password = hashedPassword
-
-	// Success
-	repo.On("Create", ctx, mock.AnythingOfType("*domain.User")).Return(&expectedUser, nil).Once()
-
-	result, err = service.Register(ctx, user)
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, expectedUser.ID, result.ID)
-
-	// Failure - user exist
-	repo.On("Create", ctx, mock.AnythingOfType("*domain.User")).Return((*domain.User)(nil), domain.ErrConflictingData).Once()
-
-	result, err = service.Register(ctx, user)
-	assert.Error(t, err)
-	assert.Nil(t, result)
-	assert.Equal(t, domain.ErrConflictingData, err)
 }
 
 func TestGetUser(t *testing.T) {
@@ -104,6 +69,31 @@ func TestGetUser(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, result)
 	assert.Equal(t, domain.ErrDataNotFound, err)
+}
+
+func TestGetUserByName(t *testing.T) {
+	repo := new(MockUserRepository)
+	service := service.NewUserService(repo)
+	ctx := context.Background()
+
+	userName := "Rafa S"
+	expectedUser := &domain.User{ID: uuid.New(), Name: userName}
+
+	// Success
+	repo.On("GetUserByName", ctx, userName).Return(expectedUser, nil).Once()
+	result, err := service.GetUserByName(ctx, userName)
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Equal(t, expectedUser.Name, result.Name)
+
+	// Failure - user not exist
+	repo.On("GetUserByName", ctx, "User Test").Return((*domain.User)(nil), domain.ErrDataNotFound).Once()
+	result, err = service.GetUserByName(ctx, "User Test")
+	assert.Error(t, err)
+	assert.Nil(t, result)
+	assert.Equal(t, domain.ErrDataNotFound, err)
+
+	repo.AssertExpectations(t)
 }
 
 func TestListUsers(t *testing.T) {

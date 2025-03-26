@@ -234,7 +234,7 @@ func TestDatabaseAdapter_Connect(t *testing.T) {
 			adapter := &DatabaseAdapter{
 				config: tt.config,
 			}
-			err := adapter.connect()
+			err := adapter.Connect()
 			if tt.wantErr {
 				assert.Error(t, err)
 			} else {

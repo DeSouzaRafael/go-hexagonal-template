@@ -20,24 +20,17 @@ func NewUserService(repo port.UserRepository) UserService {
 	}
 }
 
-func (us *UserService) Register(ctx context.Context, user *domain.User) (*domain.User, error) {
-	hashedPassword, err := util.HashPassword(user.Password)
+func (us *UserService) GetUser(ctx context.Context, id string) (*domain.User, error) {
+	user, err := us.repo.Get(ctx, uuid.MustParse(id))
 	if err != nil {
-		return nil, err
-	}
-
-	user.Password = hashedPassword
-
-	user, err = us.repo.Create(ctx, user)
-	if err != nil {
-		return nil, err
+		return nil, domain.ErrDataNotFound
 	}
 
 	return user, nil
 }
 
-func (us *UserService) GetUser(ctx context.Context, id string) (*domain.User, error) {
-	user, err := us.repo.Get(ctx, uuid.MustParse(id))
+func (us *UserService) GetUserByName(ctx context.Context, name string) (*domain.User, error) {
+	user, err := us.repo.GetUserByName(ctx, name)
 	if err != nil {
 		return nil, domain.ErrDataNotFound
 	}

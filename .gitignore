@@ -1,4 +1,7 @@
 .env
+.env.development
 bin/
 coverage.html
 coverage.out
+coverage.sh
+gosec-results.json
