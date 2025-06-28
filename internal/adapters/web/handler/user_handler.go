@@ -22,19 +22,25 @@ func NewUserHandler(svc port.UserService) UserHandler {
 func (uh *UserHandler) GetUser(ctx echo.Context) error {
 	id := ctx.Param("id")
 
+	if _, err := uuid.Parse(id); err != nil {
+		return ctx.JSON(http.StatusBadRequest, map[string]string{"message": "Invalid ID format"})
+	}
+
 	user, err := uh.svc.GetUser(ctx.Request().Context(), id)
 	if err != nil {
-		return ctx.JSON(http.StatusForbidden, map[string]string{"message": err.Error()})
+		if err == domain.ErrDataNotFound {
+			return ctx.JSON(http.StatusNotFound, map[string]string{"message": err.Error()})
+		}
+		return ctx.JSON(http.StatusInternalServerError, map[string]string{"message": err.Error()})
 	}
 
 	return ctx.JSON(http.StatusOK, user)
 }
 
 func (uh *UserHandler) ListUsers(ctx echo.Context) error {
-
 	users, err := uh.svc.ListUsers(ctx.Request().Context())
 	if err != nil {
-		return ctx.JSON(http.StatusForbidden, map[string]string{"message": err.Error()})
+		return ctx.JSON(http.StatusInternalServerError, map[string]string{"message": err.Error()})
 	}
 
 	return ctx.JSON(http.StatusOK, users)
@@ -48,20 +54,32 @@ type updateUserRequest struct {
 func (uh *UserHandler) UpdateUser(ctx echo.Context) error {
 	var req updateUserRequest
 	if err := ctx.Bind(&req); err != nil {
-		return ctx.JSON(http.StatusBadRequest, err.Error())
+		return ctx.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
 	}
 
 	id := ctx.Param("id")
 
+	parsedID, err := uuid.Parse(id)
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, map[string]string{"message": "Invalid ID format"})
+	}
+
 	user := &domain.User{
-		ID:       uuid.MustParse(id),
+		ID:       parsedID,
 		Name:     req.Name,
 		Password: req.Password,
 	}
 
-	user, err := uh.svc.UpdateUser(ctx.Request().Context(), user)
+	user, err = uh.svc.UpdateUser(ctx.Request().Context(), user)
 	if err != nil {
-		return ctx.JSON(http.StatusForbidden, map[string]string{"message": err.Error()})
+		if err == domain.ErrDataNotFound {
+			return ctx.JSON(http.StatusNotFound, map[string]string{"message": err.Error()})
+		} else if err == domain.ErrNoUpdatedData {
+			return ctx.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
+		} else if err == domain.ErrConflictingData {
+			return ctx.JSON(http.StatusConflict, map[string]string{"message": err.Error()})
+		}
+		return ctx.JSON(http.StatusInternalServerError, map[string]string{"message": err.Error()})
 	}
 
 	return ctx.JSON(http.StatusOK, user)
@@ -70,9 +88,16 @@ func (uh *UserHandler) UpdateUser(ctx echo.Context) error {
 func (uh *UserHandler) DeleteUser(ctx echo.Context) error {
 	id := ctx.Param("id")
 
+	if _, err := uuid.Parse(id); err != nil {
+		return ctx.JSON(http.StatusBadRequest, map[string]string{"message": "Invalid ID format"})
+	}
+
 	err := uh.svc.DeleteUser(ctx.Request().Context(), id)
 	if err != nil {
-		return ctx.JSON(http.StatusForbidden, map[string]string{"message": err.Error()})
+		if err == domain.ErrDataNotFound {
+			return ctx.JSON(http.StatusNotFound, map[string]string{"message": err.Error()})
+		}
+		return ctx.JSON(http.StatusInternalServerError, map[string]string{"message": err.Error()})
 	}
 
 	return ctx.NoContent(http.StatusNoContent)

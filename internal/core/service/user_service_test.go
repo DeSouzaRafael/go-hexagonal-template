@@ -40,7 +40,7 @@ func (m *MockUserRepository) List(ctx context.Context) ([]domain.User, error) {
 
 func (m *MockUserRepository) Update(ctx context.Context, user *domain.User) error {
 	args := m.Called(ctx, user)
-	return args.Error(1)
+	return args.Error(0)
 }
 
 func (m *MockUserRepository) Delete(ctx context.Context, id interface{}) error {
@@ -132,7 +132,7 @@ func TestUpdateUser(t *testing.T) {
 
 	// Success
 	repo.On("Get", ctx, updatedUser.ID).Return(&domain.User{ID: updatedUser.ID, Name: "Rafa S"}, nil).Once()
-	repo.On("Update", ctx, updatedUser).Return(updatedUser, nil).Once()
+	repo.On("Update", ctx, updatedUser).Return(nil).Once()
 	result, err := service.UpdateUser(ctx, updatedUser)
 	assert.NoError(t, err)
 	assert.Equal(t, updatedUser, result)
@@ -141,21 +141,21 @@ func TestUpdateUser(t *testing.T) {
 	updatedUser.Name = ""
 	updatedUser.Password = "new-pass123"
 	repo.On("Get", ctx, updatedUser.ID).Return(&domain.User{ID: updatedUser.ID, Name: "Rafa S"}, nil).Once()
-	repo.On("Update", ctx, updatedUser).Return(updatedUser, nil).Once()
+	repo.On("Update", ctx, updatedUser).Return(nil).Once()
 	result, err = service.UpdateUser(ctx, updatedUser)
 	assert.NoError(t, err)
 	assert.Equal(t, updatedUser, result)
 
 	// Failure - update user
 	repo.On("Get", ctx, updatedUser.ID).Return(&domain.User{ID: updatedUser.ID, Name: "Rafa S"}, nil).Once()
-	repo.On("Update", ctx, updatedUser).Return((*domain.User)(nil), errors.New("db error")).Once()
+	repo.On("Update", ctx, updatedUser).Return(errors.New("db error")).Once()
 	result, err = service.UpdateUser(ctx, updatedUser)
 	assert.Error(t, err)
 	assert.Nil(t, result)
 
 	// Failure - user not found
 	repo.On("Get", ctx, updatedUser.ID).Return((*domain.User)(nil), domain.ErrDataNotFound).Once()
-	repo.On("Update", ctx, updatedUser).Return((*domain.User)(nil), domain.ErrDataNotFound).Once()
+	repo.On("Update", ctx, updatedUser).Return(domain.ErrDataNotFound).Once()
 	result, err = service.UpdateUser(ctx, updatedUser)
 	assert.Error(t, err)
 	assert.Nil(t, result)

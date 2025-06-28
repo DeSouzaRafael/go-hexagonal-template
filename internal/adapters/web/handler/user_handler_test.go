@@ -61,7 +61,7 @@ func TestGetUser(t *testing.T) {
 			Password: "password123",
 		}
 
-		mockSvc.On("GetUser", mock.Anything, mock.Anything).Return(user, nil)
+		mockSvc.On("GetUser", mock.Anything, user.ID.String()).Return(user, nil)
 
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		rec := httptest.NewRecorder()
@@ -74,14 +74,44 @@ func TestGetUser(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusOK, rec.Code)
 	})
+
+	t.Run("invalid id format", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetPath("/users/:id")
+		c.SetParamNames("id")
+		c.SetParamValues("invalid-uuid")
+
+		err := h.GetUser(c)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+	})
+
+	t.Run("user not found", func(t *testing.T) {
+		userID := uuid.New()
+		mockSvc.On("GetUser", mock.Anything, userID.String()).Return((*domain.User)(nil), domain.ErrDataNotFound)
+
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetPath("/users/:id")
+		c.SetParamNames("id")
+		c.SetParamValues(userID.String())
+
+		err := h.GetUser(c)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusNotFound, rec.Code)
+	})
 }
 
 func TestListUsers(t *testing.T) {
-	mockSvc := new(MockUserService)
-	h := handler.NewUserHandler(mockSvc)
 	e := echo.New()
 
 	t.Run("success", func(t *testing.T) {
+		mockSvc := new(MockUserService)
+		h := handler.NewUserHandler(mockSvc)
+
 		users := []domain.User{
 			{ID: uuid.New(), Name: "User 1", Password: "pass1"},
 			{ID: uuid.New(), Name: "User 2", Password: "pass2"},
@@ -96,14 +126,32 @@ func TestListUsers(t *testing.T) {
 		err := h.ListUsers(c)
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusOK, rec.Code)
+		mockSvc.AssertExpectations(t)
+	})
+
+	t.Run("service error", func(t *testing.T) {
+		mockSvc := new(MockUserService)
+		h := handler.NewUserHandler(mockSvc)
+
+		mockSvc.On("ListUsers", mock.Anything).Return([]domain.User{}, domain.ErrInternal)
+
+		req := httptest.NewRequest(http.MethodGet, "/users", nil)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+
+		err := h.ListUsers(c)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusInternalServerError, rec.Code)
+		mockSvc.AssertExpectations(t)
 	})
 }
 func TestUpdateUser(t *testing.T) {
-	mockSvc := new(MockUserService)
-	h := handler.NewUserHandler(mockSvc)
 	e := echo.New()
 
 	t.Run("success", func(t *testing.T) {
+		mockSvc := new(MockUserService)
+		h := handler.NewUserHandler(mockSvc)
+
 		userID := uuid.New()
 		user := &domain.User{
 			ID:       userID,
@@ -125,18 +173,79 @@ func TestUpdateUser(t *testing.T) {
 		err := h.UpdateUser(c)
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusOK, rec.Code)
+		mockSvc.AssertExpectations(t)
+	})
+
+	t.Run("invalid id format", func(t *testing.T) {
+		mockSvc := new(MockUserService)
+		h := handler.NewUserHandler(mockSvc)
+
+		reqBody := `{"name":"Updated User","password":"newpass123"}`
+		req := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(reqBody))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetPath("/users/:id")
+		c.SetParamNames("id")
+		c.SetParamValues("invalid-uuid")
+
+		err := h.UpdateUser(c)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+	})
+
+	t.Run("invalid request body", func(t *testing.T) {
+		mockSvc := new(MockUserService)
+		h := handler.NewUserHandler(mockSvc)
+
+		userID := uuid.New()
+		reqBody := `{"name":123,"password":true}`
+		req := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(reqBody))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetPath("/users/:id")
+		c.SetParamNames("id")
+		c.SetParamValues(userID.String())
+
+		err := h.UpdateUser(c)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+	})
+
+	t.Run("user not found", func(t *testing.T) {
+		mockSvc := new(MockUserService)
+		h := handler.NewUserHandler(mockSvc)
+
+		userID := uuid.New()
+		mockSvc.On("UpdateUser", mock.Anything, mock.Anything).Return((*domain.User)(nil), domain.ErrDataNotFound)
+
+		reqBody := `{"name":"Updated User","password":"newpass123"}`
+		req := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(reqBody))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetPath("/users/:id")
+		c.SetParamNames("id")
+		c.SetParamValues(userID.String())
+
+		err := h.UpdateUser(c)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusNotFound, rec.Code)
+		mockSvc.AssertExpectations(t)
 	})
 }
 
 func TestDeleteUser(t *testing.T) {
-	mockSvc := new(MockUserService)
-	h := handler.NewUserHandler(mockSvc)
 	e := echo.New()
 
 	t.Run("success", func(t *testing.T) {
+		mockSvc := new(MockUserService)
+		h := handler.NewUserHandler(mockSvc)
+
 		userID := uuid.New()
 
-		mockSvc.On("DeleteUser", mock.Anything, mock.Anything).Return(nil)
+		mockSvc.On("DeleteUser", mock.Anything, userID.String()).Return(nil)
 
 		req := httptest.NewRequest(http.MethodDelete, "/", nil)
 		rec := httptest.NewRecorder()
@@ -148,5 +257,62 @@ func TestDeleteUser(t *testing.T) {
 		err := h.DeleteUser(c)
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusNoContent, rec.Code)
+		mockSvc.AssertExpectations(t)
+	})
+
+	t.Run("invalid id format", func(t *testing.T) {
+		mockSvc := new(MockUserService)
+		h := handler.NewUserHandler(mockSvc)
+
+		req := httptest.NewRequest(http.MethodDelete, "/", nil)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetPath("/users/:id")
+		c.SetParamNames("id")
+		c.SetParamValues("invalid-uuid")
+
+		err := h.DeleteUser(c)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+	})
+
+	t.Run("user not found", func(t *testing.T) {
+		mockSvc := new(MockUserService)
+		h := handler.NewUserHandler(mockSvc)
+
+		userID := uuid.New()
+		mockSvc.On("DeleteUser", mock.Anything, userID.String()).Return(domain.ErrDataNotFound)
+
+		req := httptest.NewRequest(http.MethodDelete, "/", nil)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetPath("/users/:id")
+		c.SetParamNames("id")
+		c.SetParamValues(userID.String())
+
+		err := h.DeleteUser(c)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusNotFound, rec.Code)
+		mockSvc.AssertExpectations(t)
+	})
+
+	t.Run("internal error", func(t *testing.T) {
+		mockSvc := new(MockUserService)
+		h := handler.NewUserHandler(mockSvc)
+
+		userID := uuid.New()
+		mockSvc.On("DeleteUser", mock.Anything, userID.String()).Return(domain.ErrInternal)
+
+		req := httptest.NewRequest(http.MethodDelete, "/", nil)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetPath("/users/:id")
+		c.SetParamNames("id")
+		c.SetParamValues(userID.String())
+
+		err := h.DeleteUser(c)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusInternalServerError, rec.Code)
+		mockSvc.AssertExpectations(t)
 	})
 }

@@ -202,45 +202,15 @@ func TestDatabaseAdapter_AutoMigrate(t *testing.T) {
 }
 
 func TestDatabaseAdapter_Connect(t *testing.T) {
-	tests := []struct {
-		name    string
-		config  config.DBConfig
-		wantErr bool
-	}{
-		{
-			name: "should connect successfully",
-			config: config.DBConfig{
-				Host:     "localhost",
-				Port:     "5432",
-				User:     "postgres",
-				Pass:     "postgres",
-				DBName:   "test",
-				SSLMode:  "disable",
-				LogLevel: 1,
-			},
-			wantErr: true,
-		},
-		{
-			name: "should fail with empty host",
+	// We'll only test the error case since we can't easily mock the database connection
+	// The success case is implicitly tested in other tests that use the database adapter
+	t.Run("should fail with empty host", func(t *testing.T) {
+		adapter := &DatabaseAdapter{
 			config: config.DBConfig{
 				Host: "",
 			},
-			wantErr: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			adapter := &DatabaseAdapter{
-				config: tt.config,
-			}
-			err := adapter.Connect()
-			if tt.wantErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-				assert.NotNil(t, adapter.db)
-			}
-		})
-	}
+		}
+		err := adapter.Connect()
+		assert.Error(t, err)
+	})
 }

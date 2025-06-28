@@ -16,14 +16,11 @@ type WebService struct {
 func NewWebService(h container.Handlers) *WebService {
 	e := echo.New()
 
-	// Middlewares configuration for the echo instanc
 	e.Use(echoMiddleware.CORSWithConfig(middleware.CorsConfig()))
 	e.Use(echoMiddleware.Recover(), echoMiddleware.Logger())
 
-	// Grouping routes
 	g := e.Group("/api")
 
-	// Set up the routes
 	router.AuthRouter(g, h)
 	router.UserRouter(g, h)
 

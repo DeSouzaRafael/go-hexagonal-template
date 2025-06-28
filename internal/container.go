@@ -3,6 +3,7 @@ package container
 import (
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/adapters/database/repositories"
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/adapters/web/handler"
+	"github.com/DeSouzaRafael/go-hexagonal-template/internal/adapters/web/token"
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/core/port"
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/core/service"
 )
@@ -28,14 +29,13 @@ type Handlers struct {
 }
 
 func NewContainer(db port.Database) *Container {
-	// Init repositories
 	userRepository := repositories.NewUserRepository(db)
 
-	// Init services
-	authService := service.NewAuthService(userRepository)
+	tokenGenerator := token.NewJWTTokenGenerator()
+
+	authService := service.NewAuthService(userRepository, tokenGenerator)
 	userService := service.NewUserService(userRepository)
 
-	// Init handlers
 	authHandler := handler.NewAuthHandler(&authService)
 	userHandler := handler.NewUserHandler(&userService)
 
