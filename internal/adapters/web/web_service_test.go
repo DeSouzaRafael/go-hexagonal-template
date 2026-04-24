@@ -75,6 +75,6 @@ func TestWebService_Start(t *testing.T) {
 
 	// Close the server after a short delay
 	go func() {
-		webService.Echo.Close()
+		_ = webService.Echo.Close()
 	}()
 }

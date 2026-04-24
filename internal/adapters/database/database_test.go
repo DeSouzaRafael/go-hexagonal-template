@@ -64,7 +64,7 @@ func TestNewDatabaseAdapter(t *testing.T) {
 func TestDatabaseAdapter_GetDB(t *testing.T) {
 	sqlDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer sqlDB.Close()
+	defer func() { _ = sqlDB.Close() }()
 
 	dialector := postgres.New(postgres.Config{
 		Conn: sqlDB,
