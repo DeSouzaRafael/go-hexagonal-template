@@ -3,9 +3,11 @@
 // @description     RESTful API template built with Hexagonal Architecture, Echo, and GORM.
 // @host            localhost:8086
 // @BasePath        /api
+// @schemes         http
 // @securityDefinitions.apikey BearerAuth
 // @in              header
 // @name            Authorization
+// @description     Type **Bearer &lt;token&gt;** — include the word Bearer followed by a space and the JWT.
 package main
 
 import (

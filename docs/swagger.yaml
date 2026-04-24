@@ -309,8 +309,12 @@ paths:
       summary: Update a user
       tags:
       - users
+schemes:
+- http
 securityDefinitions:
   BearerAuth:
+    description: Type **Bearer &lt;token&gt;** — include the word Bearer followed
+      by a space and the JWT.
     in: header
     name: Authorization
     type: apiKey

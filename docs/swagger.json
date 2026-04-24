@@ -1,4 +1,7 @@
 {
+    "schemes": [
+        "http"
+    ],
     "swagger": "2.0",
     "info": {
         "description": "RESTful API template built with Hexagonal Architecture, Echo, and GORM.",
@@ -481,6 +484,7 @@
     },
     "securityDefinitions": {
         "BearerAuth": {
+            "description": "Type **Bearer \u0026lt;token\u0026gt;** — include the word Bearer followed by a space and the JWT.",
             "type": "apiKey",
             "name": "Authorization",
             "in": "header"

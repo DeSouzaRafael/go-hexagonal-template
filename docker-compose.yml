@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   app:
     build:
@@ -15,9 +13,9 @@ services:
       - WEB_PORT=8086
       - WEB_DOMAIN=localhost
       - JWT_SECRET=seu-secret-key-seguro
-      - JWT_EXPIRATION=24
+      - JWT_EXPIRATION=86400
       - DB_HOST=postgres
-      - DB_PORT=5440
+      - DB_PORT=5432
       - DB_USER=postgres
       - DB_PASS=postgres
       - DB_NAME=hexagonal
@@ -33,7 +31,7 @@ services:
     container_name: go-hex-db
     restart: unless-stopped
     ports:
-      - "5440:5440"
+      - "5440:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres

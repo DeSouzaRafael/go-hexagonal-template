@@ -5,8 +5,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/DeSouzaRafael/go-hexagonal-template/internal/adapters/web/token"
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/adapters/web/middleware"
+	"github.com/DeSouzaRafael/go-hexagonal-template/internal/adapters/web/token"
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/config"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -32,22 +32,28 @@ func TestMiddleware(t *testing.T) {
 
 	e.GET("/protected", testHandler, middleware.Middleware)
 
-	req := httptest.NewRequest(http.MethodGet, "/protected", nil)
-	rec := httptest.NewRecorder()
-	e.ServeHTTP(rec, req)
-	assert.Equal(t, http.StatusUnauthorized, rec.Code)
+	t.Run("missing token", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/protected", nil)
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusUnauthorized, rec.Code)
+	})
 
-	req = httptest.NewRequest(http.MethodGet, "/protected", nil)
-	req.Header.Set("Authorization", "InvalidFormat")
-	rec = httptest.NewRecorder()
-	e.ServeHTTP(rec, req)
-	assert.Equal(t, http.StatusUnauthorized, rec.Code)
+	t.Run("invalid token", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/protected", nil)
+		req.Header.Set("Authorization", "Bearer invalid-token")
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusUnauthorized, rec.Code)
+	})
 
-	req = httptest.NewRequest(http.MethodGet, "/protected", nil)
-	req.Header.Set("Authorization", "Bearer invalid-token")
-	rec = httptest.NewRecorder()
-	e.ServeHTTP(rec, req)
-	assert.Equal(t, http.StatusUnauthorized, rec.Code)
+	t.Run("invalid token without prefix", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/protected", nil)
+		req.Header.Set("Authorization", "invalid-token")
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusUnauthorized, rec.Code)
+	})
 
 	userID := uuid.New().String()
 	generator := token.NewJWTTokenGenerator()
@@ -61,10 +67,21 @@ func TestMiddleware(t *testing.T) {
 		return c.String(http.StatusOK, userIDFromContext.(string))
 	}, middleware.Middleware)
 
-	req = httptest.NewRequest(http.MethodGet, "/check-context", nil)
-	req.Header.Set("Authorization", "Bearer "+validToken)
-	rec = httptest.NewRecorder()
-	e.ServeHTTP(rec, req)
-	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.Equal(t, userID, rec.Body.String())
+	t.Run("valid token with Bearer prefix", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/check-context", nil)
+		req.Header.Set("Authorization", "Bearer "+validToken)
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusOK, rec.Code)
+		assert.Equal(t, userID, rec.Body.String())
+	})
+
+	t.Run("valid token without Bearer prefix", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/check-context", nil)
+		req.Header.Set("Authorization", validToken)
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusOK, rec.Code)
+		assert.Equal(t, userID, rec.Body.String())
+	})
 }

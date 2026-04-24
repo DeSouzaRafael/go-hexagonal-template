@@ -18,12 +18,11 @@ func Middleware(next echo.HandlerFunc) echo.HandlerFunc {
 			return c.JSON(http.StatusUnauthorized, domain.ErrMissingToken)
 		}
 
-		parts := strings.Split(authHeader, " ")
-		if len(parts) != 2 || parts[0] != "Bearer" {
-			return c.JSON(http.StatusUnauthorized, domain.ErrTokenDuration)
+		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+		if tokenString == "" {
+			return c.JSON(http.StatusUnauthorized, domain.ErrMissingToken)
 		}
 
-		tokenString := parts[1]
 		claims := &jwt.RegisteredClaims{}
 
 		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (any, error) {

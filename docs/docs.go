@@ -487,6 +487,7 @@ const docTemplate = `{
     },
     "securityDefinitions": {
         "BearerAuth": {
+            "description": "Type **Bearer \u0026lt;token\u0026gt;** — include the word Bearer followed by a space and the JWT.",
             "type": "apiKey",
             "name": "Authorization",
             "in": "header"
@@ -499,7 +500,7 @@ var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
 	Host:             "localhost:8086",
 	BasePath:         "/api",
-	Schemes:          []string{},
+	Schemes:          []string{"http"},
 	Title:            "Go Hexagonal Template API",
 	Description:      "RESTful API template built with Hexagonal Architecture, Echo, and GORM.",
 	InfoInstanceName: "swagger",
