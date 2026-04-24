@@ -1,37 +1,85 @@
+// @title           Go Hexagonal Template API
+// @version         1.0
+// @description     RESTful API template built with Hexagonal Architecture, Echo, and GORM.
+// @host            localhost:8086
+// @BasePath        /api
+// @schemes         http
+// @securityDefinitions.apikey BearerAuth
+// @in              header
+// @name            Authorization
+// @description     Type **Bearer &lt;token&gt;** — include the word Bearer followed by a space and the JWT.
 package main
 
 import (
+	"flag"
 	"log"
 
 	container "github.com/DeSouzaRafael/go-hexagonal-template/internal"
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/adapters/database"
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/adapters/web"
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/config"
-	"github.com/DeSouzaRafael/go-hexagonal-template/internal/core/domain"
+	"github.com/DeSouzaRafael/go-hexagonal-template/internal/core/port"
+
+	_ "github.com/DeSouzaRafael/go-hexagonal-template/docs"
 )
 
 func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
+}
 
-	// Load settings
+func run() error {
+	mockDB := flag.Bool("mock-db", false, "Use mock database instead of real database")
+	flag.Parse()
+
 	if err := config.LoadConfig(); err != nil {
-		panic("Error loading settings: " + err.Error())
+		return err
 	}
 
-	// Init database
-	db, err := database.NewDatabaseAdapter(config.AppConfig.Database)
+	var db port.Database
+	var err error
+
+	if *mockDB {
+		db, err = database.NewMockDatabaseAdapter()
+	} else {
+		db, err = database.NewDatabaseAdapter(config.AppConfig.Database)
+	}
+
 	if err != nil {
-		panic(err)
+		return err
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			log.Printf("failed to close database: %v", err)
+		}
+	}()
 
-	if err := db.AutoMigrate(&domain.User{}); err != nil {
-		panic("Error migrating database: " + err.Error())
+	return runWithDB(db)
+}
+
+type WebServer interface {
+	Start() error
+}
+
+func runWithDB(db port.Database) error {
+	webServiceFactory := func(h container.Handlers) WebServer {
+		return web.NewWebService(h)
+	}
+	return runWithDependencies(db, container.NewContainer, webServiceFactory)
+}
+
+type ContainerFactory func(port.Database) *container.Container
+
+type WebServiceFactory func(container.Handlers) WebServer
+
+func runWithDependencies(db port.Database, containerFactory ContainerFactory, webServiceFactory WebServiceFactory) error {
+	if err := db.Migrate(); err != nil {
+		return err
 	}
 
-	// Init container
-	cont := container.NewContainer(db)
+	cont := containerFactory(db)
 
-	// Init web service
-	server := web.NewWebService(cont.Handlers)
-	log.Fatal(server.Start())
+	server := webServiceFactory(cont.Handlers)
+	return server.Start()
 }

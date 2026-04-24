@@ -21,7 +21,7 @@ func TestNewDatabaseAdapter(t *testing.T) {
 			name: "invalid connection",
 			config: config.DBConfig{
 				Host:     "invalid-host",
-				Port:     "5432",
+				Port:     "5440",
 				User:     "postgres",
 				Pass:     "postgres",
 				DBName:   "test",
@@ -64,7 +64,7 @@ func TestNewDatabaseAdapter(t *testing.T) {
 func TestDatabaseAdapter_GetDB(t *testing.T) {
 	sqlDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer sqlDB.Close()
+	defer func() { _ = sqlDB.Close() }()
 
 	dialector := postgres.New(postgres.Config{
 		Conn: sqlDB,
@@ -115,6 +115,26 @@ func TestDatabaseAdapter_Close(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "should handle already closed underlying connection",
+			setup: func(t *testing.T) (*DatabaseAdapter, sqlmock.Sqlmock) {
+				sqlDB, mock, err := sqlmock.New()
+				require.NoError(t, err)
+
+				dialector := postgres.New(postgres.Config{
+					Conn:                 sqlDB,
+					PreferSimpleProtocol: true,
+				})
+				db, err := gorm.Open(dialector, &gorm.Config{})
+				require.NoError(t, err)
+
+				mock.ExpectClose()
+				require.NoError(t, sqlDB.Close())
+
+				return &DatabaseAdapter{db: db}, mock
+			},
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -135,112 +155,43 @@ func TestDatabaseAdapter_Close(t *testing.T) {
 	}
 }
 
-func TestDatabaseAdapter_AutoMigrate(t *testing.T) {
-	tests := []struct {
-		name    string
-		setup   func(t *testing.T) (*DatabaseAdapter, sqlmock.Sqlmock)
-		wantErr bool
-	}{
-		{
-			name: "should migrate successfully",
-			setup: func(t *testing.T) (*DatabaseAdapter, sqlmock.Sqlmock) {
-				sqlDB, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherRegexp))
-				require.NoError(t, err)
-
-				mock.ExpectQuery(`SELECT count\(\*\) FROM information_schema\.tables WHERE table_schema = CURRENT_SCHEMA\(\) AND table_name = \$1 AND table_type = \$2`).
-					WithArgs("test_models", "BASE TABLE").
-					WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
-
-				mock.ExpectExec(`CREATE TABLE "test_models" \("id" bigserial,"name" varchar\(100\),PRIMARY KEY \("id"\)\)`).
-					WillReturnResult(sqlmock.NewResult(1, 1))
-
-				dialector := postgres.New(postgres.Config{
-					Conn:                 sqlDB,
-					PreferSimpleProtocol: true,
-				})
-
-				db, err := gorm.Open(dialector, &gorm.Config{
-					SkipDefaultTransaction: true,
-				})
-				require.NoError(t, err)
-
-				return &DatabaseAdapter{db: db}, mock
-			},
-			wantErr: false,
-		},
-		{
-			name: "should fail when db is nil",
-			setup: func(t *testing.T) (*DatabaseAdapter, sqlmock.Sqlmock) {
-				return &DatabaseAdapter{db: nil}, nil
-			},
-			wantErr: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			adapter, mock := tt.setup(t)
-
-			type TestModel struct {
-				ID   uint   `gorm:"primarykey"`
-				Name string `gorm:"type:varchar(100)"`
-			}
-
-			err := adapter.AutoMigrate(&TestModel{})
-
-			if tt.wantErr {
-				assert.Error(t, err)
-				assert.Equal(t, "database connection not initialized", err.Error())
-			} else {
-				assert.NoError(t, err)
-				if mock != nil {
-					assert.NoError(t, mock.ExpectationsWereMet())
-				}
-			}
-		})
-	}
-}
-
-func TestDatabaseAdapter_Connect(t *testing.T) {
-	tests := []struct {
-		name    string
-		config  config.DBConfig
-		wantErr bool
-	}{
-		{
-			name: "should connect successfully",
+func TestDatabaseAdapter_Migrate(t *testing.T) {
+	t.Run("should fail with invalid dsn", func(t *testing.T) {
+		adapter := &DatabaseAdapter{
 			config: config.DBConfig{
-				Host:     "localhost",
-				Port:     "5432",
-				User:     "postgres",
-				Pass:     "postgres",
-				DBName:   "test",
-				SSLMode:  "disable",
-				LogLevel: 1,
+				Host:    "invalid-host",
+				Port:    "5432",
+				User:    "postgres",
+				Pass:    "postgres",
+				DBName:  "test",
+				SSLMode: "disable",
 			},
-			wantErr: true,
-		},
-		{
-			name: "should fail with empty host",
+		}
+		err := adapter.Migrate()
+		assert.Error(t, err)
+	})
+
+	t.Run("should fail with empty host", func(t *testing.T) {
+		adapter := &DatabaseAdapter{
 			config: config.DBConfig{
 				Host: "",
 			},
-			wantErr: true,
-		},
-	}
+		}
+		err := adapter.Migrate()
+		assert.Error(t, err)
+	})
+}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			adapter := &DatabaseAdapter{
-				config: tt.config,
-			}
-			err := adapter.Connect()
-			if tt.wantErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-				assert.NotNil(t, adapter.db)
-			}
-		})
-	}
+func TestDatabaseAdapter_Connect(t *testing.T) {
+	// We'll only test the error case since we can't easily mock the database connection
+	// The success case is implicitly tested in other tests that use the database adapter
+	t.Run("should fail with empty host", func(t *testing.T) {
+		adapter := &DatabaseAdapter{
+			config: config.DBConfig{
+				Host: "",
+			},
+		}
+		err := adapter.Connect()
+		assert.Error(t, err)
+	})
 }

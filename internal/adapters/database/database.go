@@ -1,6 +1,8 @@
 package database
 
 import (
+	"embed"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -8,10 +10,16 @@ import (
 
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/config"
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/core/port"
+	migrate "github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
+
+//go:embed migrations/*.sql
+var migrationsFS embed.FS
 
 type DatabaseAdapter struct {
 	db     *gorm.DB
@@ -90,9 +98,26 @@ func (d *DatabaseAdapter) Close() error {
 	return err
 }
 
-func (d *DatabaseAdapter) AutoMigrate(models ...interface{}) error {
-	if d.db == nil {
-		return fmt.Errorf("database connection not initialized")
+func (d *DatabaseAdapter) Migrate() error {
+	sourceDriver, err := iofs.New(migrationsFS, "migrations")
+	if err != nil {
+		return fmt.Errorf("failed to load migrations: %w", err)
 	}
-	return d.db.AutoMigrate(models...)
+
+	dsn := fmt.Sprintf(
+		"postgres://%s:%s@%s:%s/%s?sslmode=%s",
+		d.config.User, d.config.Pass, d.config.Host, d.config.Port, d.config.DBName, d.config.SSLMode,
+	)
+
+	m, err := migrate.NewWithSourceInstance("iofs", sourceDriver, dsn)
+	if err != nil {
+		return fmt.Errorf("failed to initialize migrations: %w", err)
+	}
+	defer func() { _, _ = m.Close() }()
+
+	if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		return fmt.Errorf("failed to run migrations: %w", err)
+	}
+
+	return nil
 }

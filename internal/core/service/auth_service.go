@@ -4,19 +4,20 @@ import (
 	"context"
 	"errors"
 
-	"github.com/DeSouzaRafael/go-hexagonal-template/internal/adapters/web/middleware"
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/core/domain"
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/core/port"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthService struct {
-	userRepo port.UserRepository
+	userRepo       port.UserRepository
+	tokenGenerator port.TokenGenerator
 }
 
-func NewAuthService(userRepo port.UserRepository) AuthService {
-	return AuthService{
-		userRepo: userRepo,
+func NewAuthService(userRepo port.UserRepository, tokenGenerator port.TokenGenerator) *AuthService {
+	return &AuthService{
+		userRepo:       userRepo,
+		tokenGenerator: tokenGenerator,
 	}
 }
 
@@ -39,7 +40,7 @@ func (as *AuthService) Login(ctx context.Context, name, password string) (string
 		return "", errors.New("invalid credentials")
 	}
 
-	token, err := middleware.GenerateJWT(user.ID.String())
+	token, err := as.tokenGenerator.GenerateToken(user.ID.String())
 	if err != nil {
 		return "", errors.New("failed to generate token")
 	}

@@ -2,11 +2,27 @@ package config_test
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/config"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+func TestLoadConfigWithUnreadableEnvFile(t *testing.T) {
+	tmpDir := t.TempDir()
+	envFile := filepath.Join(tmpDir, ".env")
+	require.NoError(t, os.WriteFile(envFile, []byte("APP_NAME=test\n"), 0000))
+
+	orig, err := os.Getwd()
+	require.NoError(t, err)
+	require.NoError(t, os.Chdir(tmpDir))
+	defer func() { _ = os.Chdir(orig) }()
+
+	err = config.LoadConfig()
+	assert.Error(t, err)
+}
 
 func TestLoadConfigWithMissingEnvFile(t *testing.T) {
 	// Clean environment variables

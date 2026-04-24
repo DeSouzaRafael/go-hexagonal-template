@@ -7,5 +7,5 @@ import (
 type Database interface {
 	GetDB() *gorm.DB
 	Close() error
-	AutoMigrate(models ...interface{}) error
+	Migrate() error
 }

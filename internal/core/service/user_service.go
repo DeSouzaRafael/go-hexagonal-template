@@ -14,14 +14,19 @@ type UserService struct {
 	repo port.UserRepository
 }
 
-func NewUserService(repo port.UserRepository) UserService {
-	return UserService{
+func NewUserService(repo port.UserRepository) *UserService {
+	return &UserService{
 		repo,
 	}
 }
 
 func (us *UserService) GetUser(ctx context.Context, id string) (*domain.User, error) {
-	user, err := us.repo.Get(ctx, uuid.MustParse(id))
+	parsedID, err := uuid.Parse(id)
+	if err != nil {
+		return nil, domain.ErrDataNotFound
+	}
+
+	user, err := us.repo.Get(ctx, parsedID)
 	if err != nil {
 		return nil, domain.ErrDataNotFound
 	}
@@ -58,7 +63,11 @@ func (us *UserService) UpdateUser(ctx context.Context, user *domain.User) (*doma
 	}
 
 	if user.Password != "" {
-		user.Password, _ = util.HashPassword(user.Password)
+		hashed, err := util.HashPassword(user.Password)
+		if err != nil {
+			return nil, err
+		}
+		user.Password = hashed
 	} else {
 		user.Password = existingUser.Password
 	}
@@ -72,10 +81,15 @@ func (us *UserService) UpdateUser(ctx context.Context, user *domain.User) (*doma
 }
 
 func (us *UserService) DeleteUser(ctx context.Context, id string) error {
-	_, err := us.repo.Get(ctx, uuid.MustParse(id))
+	parsedID, err := uuid.Parse(id)
 	if err != nil {
 		return domain.ErrDataNotFound
 	}
 
-	return us.repo.Delete(ctx, uuid.MustParse(id))
+	_, err = us.repo.Get(ctx, parsedID)
+	if err != nil {
+		return domain.ErrDataNotFound
+	}
+
+	return us.repo.Delete(ctx, parsedID)
 }
