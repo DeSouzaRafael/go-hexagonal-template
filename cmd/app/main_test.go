@@ -25,8 +25,8 @@ func (m *MockDatabase) Close() error {
 	return args.Error(0)
 }
 
-func (m *MockDatabase) AutoMigrate(models ...interface{}) error {
-	args := m.Called(models)
+func (m *MockDatabase) Migrate() error {
+	args := m.Called()
 	return args.Error(0)
 }
 
@@ -52,7 +52,7 @@ func TestRunWithDependencies(t *testing.T) {
 		{
 			name: "successful run",
 			setupMocks: func(mockDB *MockDatabase, mockWebServer *MockWebServer) (port.Database, ContainerFactory, WebServiceFactory) {
-				mockDB.On("AutoMigrate", mock.Anything).Return(nil)
+				mockDB.On("Migrate").Return(nil)
 				mockWebServer.On("Start").Return(nil)
 
 				containerFactory := func(db port.Database) *container.Container {
@@ -69,7 +69,7 @@ func TestRunWithDependencies(t *testing.T) {
 		{
 			name: "migration error",
 			setupMocks: func(mockDB *MockDatabase, mockWebServer *MockWebServer) (port.Database, ContainerFactory, WebServiceFactory) {
-				mockDB.On("AutoMigrate", mock.Anything).Return(errors.New("migration error"))
+				mockDB.On("Migrate").Return(errors.New("migration error"))
 
 				containerFactory := func(db port.Database) *container.Container {
 					return &container.Container{Handlers: container.Handlers{}}
@@ -85,7 +85,7 @@ func TestRunWithDependencies(t *testing.T) {
 		{
 			name: "web server error",
 			setupMocks: func(mockDB *MockDatabase, mockWebServer *MockWebServer) (port.Database, ContainerFactory, WebServiceFactory) {
-				mockDB.On("AutoMigrate", mock.Anything).Return(nil)
+				mockDB.On("Migrate").Return(nil)
 				mockWebServer.On("Start").Return(errors.New("web server error"))
 
 				containerFactory := func(db port.Database) *container.Container {

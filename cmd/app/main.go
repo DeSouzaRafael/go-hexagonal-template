@@ -18,9 +18,7 @@ import (
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/adapters/database"
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/adapters/web"
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/config"
-	"github.com/DeSouzaRafael/go-hexagonal-template/internal/core/domain"
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/core/port"
-	"github.com/DeSouzaRafael/go-hexagonal-template/pkg/util"
 
 	_ "github.com/DeSouzaRafael/go-hexagonal-template/docs"
 )
@@ -76,10 +74,8 @@ type ContainerFactory func(port.Database) *container.Container
 type WebServiceFactory func(container.Handlers) WebServer
 
 func runWithDependencies(db port.Database, containerFactory ContainerFactory, webServiceFactory WebServiceFactory) error {
-	if !util.CurrentExecutionEnvironmentProduction() {
-		if err := db.AutoMigrate(&domain.User{}); err != nil {
-			return err
-		}
+	if err := db.Migrate(); err != nil {
+		return err
 	}
 
 	cont := containerFactory(db)

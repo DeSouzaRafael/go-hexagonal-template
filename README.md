@@ -219,7 +219,34 @@ make docker-down     # Stop containers
 make docker-restart  # Restart containers
 ```
 
-> `AutoMigrate` only runs outside of `production` environment. Use a proper migration tool such as [golang-migrate](https://github.com/golang-migrate/migrate) for production deployments.
+## Migrations
+
+Database migrations are managed with [golang-migrate](https://github.com/golang-migrate/migrate) and embedded into the binary at compile time. On startup, the application automatically applies any pending migrations.
+
+Migration files live in `internal/adapters/database/migrations/` and follow the `<version>_<description>.up.sql` / `.down.sql` naming convention.
+
+### CLI commands
+
+The migration targets in the Makefile require the `migrate` CLI:
+
+```bash
+go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+```
+
+| Command | Description |
+|---------|-------------|
+| `make migrate-create NAME=<name>` | Create a new migration file pair |
+| `make migrate-up` | Apply all pending migrations |
+| `make migrate-down` | Roll back the last migration |
+| `make migrate-version` | Show current migration version |
+| `make migrate-force VERSION=<n>` | Force-set version (fixes dirty state) |
+
+The `DB_URL` is assembled from the environment variables in `.env`. Export them before running migration targets directly:
+
+```bash
+export $(grep -v '^#' .env | xargs)
+make migrate-up
+```
 
 ## API Reference
 
@@ -272,9 +299,11 @@ swag init -g cmd/app/main.go -o docs --parseDependency --parseInternal
 2. Define repository and service interfaces in `internal/core/port/`
 3. Implement business logic in `internal/core/service/`
 4. Implement the repository in `internal/adapters/database/repositories/`
-5. Add HTTP handlers in `internal/adapters/web/handler/`
-6. Register routes in `internal/adapters/web/router/`
-7. Wire everything in `internal/container.go`
+5. Create a migration: `make migrate-create NAME=create_<entity>_table`
+6. Write the SQL in the generated `.up.sql` and `.down.sql` files
+7. Add HTTP handlers in `internal/adapters/web/handler/`
+8. Register routes in `internal/adapters/web/router/`
+9. Wire everything in `internal/container.go`
 
 ## License
 

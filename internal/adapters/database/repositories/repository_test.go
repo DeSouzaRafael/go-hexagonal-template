@@ -31,7 +31,7 @@ func (m *MockDatabase) Close() error {
 	return nil
 }
 
-func (m *MockDatabase) AutoMigrate(models ...interface{}) error {
+func (m *MockDatabase) Migrate() error {
 	return nil
 }
 

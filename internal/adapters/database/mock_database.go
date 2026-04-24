@@ -40,9 +40,8 @@ func (d *MockDatabaseAdapter) Close() error {
 	return nil
 }
 
-// AutoMigrate is a no-op for the mock adapter
-func (d *MockDatabaseAdapter) AutoMigrate(models ...interface{}) error {
-	log.Println("Auto-migrating mock database (no-op)")
-	log.Println("Models:", models)
+// Migrate is a no-op for the mock adapter
+func (d *MockDatabaseAdapter) Migrate() error {
+	log.Println("Skipping migrations for mock database adapter")
 	return nil
 }
