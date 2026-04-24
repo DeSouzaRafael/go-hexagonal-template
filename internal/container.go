@@ -19,8 +19,8 @@ type Repositories struct {
 }
 
 type Services struct {
-	AuthService service.AuthService
-	UserService service.UserService
+	AuthService *service.AuthService
+	UserService *service.UserService
 }
 
 type Handlers struct {
@@ -36,8 +36,8 @@ func NewContainer(db port.Database) *Container {
 	authService := service.NewAuthService(userRepository, tokenGenerator)
 	userService := service.NewUserService(userRepository)
 
-	authHandler := handler.NewAuthHandler(&authService)
-	userHandler := handler.NewUserHandler(&userService)
+	authHandler := handler.NewAuthHandler(authService)
+	userHandler := handler.NewUserHandler(userService)
 
 	return &Container{
 		Repositories: Repositories{

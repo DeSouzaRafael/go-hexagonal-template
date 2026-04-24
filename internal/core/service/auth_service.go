@@ -14,8 +14,8 @@ type AuthService struct {
 	tokenGenerator port.TokenGenerator
 }
 
-func NewAuthService(userRepo port.UserRepository, tokenGenerator port.TokenGenerator) AuthService {
-	return AuthService{
+func NewAuthService(userRepo port.UserRepository, tokenGenerator port.TokenGenerator) *AuthService {
+	return &AuthService{
 		userRepo:       userRepo,
 		tokenGenerator: tokenGenerator,
 	}

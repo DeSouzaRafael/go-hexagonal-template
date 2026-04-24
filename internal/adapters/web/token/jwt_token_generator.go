@@ -1,19 +1,27 @@
 package token
 
 import (
-	"github.com/DeSouzaRafael/go-hexagonal-template/internal/adapters/web/middleware"
+	"time"
+
+	"github.com/DeSouzaRafael/go-hexagonal-template/internal/config"
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/core/port"
+	"github.com/golang-jwt/jwt/v5"
 )
 
-// JWTTokenGenerator implements the TokenGenerator interface using JWT
 type JWTTokenGenerator struct{}
 
-// NewJWTTokenGenerator creates a new JWTTokenGenerator
 func NewJWTTokenGenerator() port.TokenGenerator {
 	return &JWTTokenGenerator{}
 }
 
-// GenerateToken generates a JWT token for the given user ID
 func (g *JWTTokenGenerator) GenerateToken(userID string) (string, error) {
-	return middleware.GenerateJWT(userID)
+	expiration := time.Now().Add(time.Second * time.Duration(config.AppConfig.Jwt.Expiration))
+	claims := &jwt.RegisteredClaims{
+		Subject:   userID,
+		ExpiresAt: jwt.NewNumericDate(expiration),
+		IssuedAt:  jwt.NewNumericDate(time.Now()),
+	}
+
+	t := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return t.SignedString([]byte(config.AppConfig.Jwt.Secret))
 }

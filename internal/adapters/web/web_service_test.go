@@ -16,7 +16,7 @@ func TestNewWebService(t *testing.T) {
 	// Setup
 	config.AppConfig = &config.Config{
 		WebService: config.WebService{
-			Port: "8080",
+			Port: "8086",
 		},
 	}
 

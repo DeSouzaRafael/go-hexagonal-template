@@ -21,7 +21,7 @@ func TestNewDatabaseAdapter(t *testing.T) {
 			name: "invalid connection",
 			config: config.DBConfig{
 				Host:     "invalid-host",
-				Port:     "5432",
+				Port:     "5440",
 				User:     "postgres",
 				Pass:     "postgres",
 				DBName:   "test",

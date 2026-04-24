@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 
 	container "github.com/DeSouzaRafael/go-hexagonal-template/internal"
@@ -18,11 +19,25 @@ func main() {
 }
 
 func run() error {
+	// Define command-line flags
+	mockDB := flag.Bool("mock-db", false, "Use mock database instead of real database")
+	flag.Parse()
+
 	if err := config.LoadConfig(); err != nil {
 		return err
 	}
 
-	db, err := database.NewDatabaseAdapter(config.AppConfig.Database)
+	var db port.Database
+	var err error
+
+	if *mockDB {
+		log.Println("Using mock database - no actual database connection will be established")
+		db, err = database.NewMockDatabaseAdapter()
+	} else {
+		log.Println("Using real database connection")
+		db, err = database.NewDatabaseAdapter(config.AppConfig.Database)
+	}
+
 	if err != nil {
 		return err
 	}

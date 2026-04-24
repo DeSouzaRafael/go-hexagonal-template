@@ -26,10 +26,8 @@ func Middleware(next echo.HandlerFunc) echo.HandlerFunc {
 		tokenString := parts[1]
 		claims := &jwt.RegisteredClaims{}
 
-		secretKey := []byte(config.AppConfig.Jwt.Secret)
-
-		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-			return secretKey, nil
+		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (any, error) {
+			return []byte(config.AppConfig.Jwt.Secret), nil
 		})
 		if err != nil || !token.Valid {
 			return c.JSON(http.StatusUnauthorized, domain.ErrInvalidToken)
@@ -43,18 +41,4 @@ func Middleware(next echo.HandlerFunc) echo.HandlerFunc {
 
 		return next(c)
 	}
-}
-
-func GenerateJWT(userID string) (string, error) {
-	expirationTime := time.Now().Add(time.Second * time.Duration(config.AppConfig.Jwt.Expiration))
-	claims := &jwt.RegisteredClaims{
-		Subject:   userID,
-		ExpiresAt: jwt.NewNumericDate(expirationTime),
-		IssuedAt:  jwt.NewNumericDate(time.Now()),
-	}
-
-	secretKey := []byte(config.AppConfig.Jwt.Secret)
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(secretKey)
 }

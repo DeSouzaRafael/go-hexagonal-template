@@ -5,3 +5,4 @@ coverage.html
 coverage.out
 coverage.sh
 gosec-results.json
+.planning/*

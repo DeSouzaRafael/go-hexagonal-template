@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/core/domain"
@@ -28,7 +29,7 @@ func (uh *UserHandler) GetUser(ctx echo.Context) error {
 
 	user, err := uh.svc.GetUser(ctx.Request().Context(), id)
 	if err != nil {
-		if err == domain.ErrDataNotFound {
+		if errors.Is(err, domain.ErrDataNotFound) {
 			return ctx.JSON(http.StatusNotFound, map[string]string{"message": err.Error()})
 		}
 		return ctx.JSON(http.StatusInternalServerError, map[string]string{"message": err.Error()})
@@ -72,11 +73,11 @@ func (uh *UserHandler) UpdateUser(ctx echo.Context) error {
 
 	user, err = uh.svc.UpdateUser(ctx.Request().Context(), user)
 	if err != nil {
-		if err == domain.ErrDataNotFound {
+		if errors.Is(err, domain.ErrDataNotFound) {
 			return ctx.JSON(http.StatusNotFound, map[string]string{"message": err.Error()})
-		} else if err == domain.ErrNoUpdatedData {
+		} else if errors.Is(err, domain.ErrNoUpdatedData) {
 			return ctx.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
-		} else if err == domain.ErrConflictingData {
+		} else if errors.Is(err, domain.ErrConflictingData) {
 			return ctx.JSON(http.StatusConflict, map[string]string{"message": err.Error()})
 		}
 		return ctx.JSON(http.StatusInternalServerError, map[string]string{"message": err.Error()})
@@ -94,7 +95,7 @@ func (uh *UserHandler) DeleteUser(ctx echo.Context) error {
 
 	err := uh.svc.DeleteUser(ctx.Request().Context(), id)
 	if err != nil {
-		if err == domain.ErrDataNotFound {
+		if errors.Is(err, domain.ErrDataNotFound) {
 			return ctx.JSON(http.StatusNotFound, map[string]string{"message": err.Error()})
 		}
 		return ctx.JSON(http.StatusInternalServerError, map[string]string{"message": err.Error()})

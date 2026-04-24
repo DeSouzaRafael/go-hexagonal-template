@@ -130,7 +130,7 @@ APP_NAME=go-hexagonal-template
 APP_ENV=development
 
 # Web Server Settings
-WEB_PORT=8080
+WEB_PORT=8086
 WEB_DOMAIN=localhost
 
 # JWT Settings
@@ -139,7 +139,7 @@ JWT_EXPIRATION=3600 # 1 hour
 
 # Database Settings 
 DB_HOST=postgres
-DB_PORT=5432
+DB_PORT=5440
 DB_USER=postgres
 DB_PASS=postgres
 DB_NAME=hexagonal
@@ -161,7 +161,7 @@ Or manually:
 go run cmd/app/main.go
 ```
 
-The API will be available at `http://localhost:8080/api`.
+The API will be available at `http://localhost:8086/api`.
 
 ### Docker
 
