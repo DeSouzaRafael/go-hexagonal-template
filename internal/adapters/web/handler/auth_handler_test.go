@@ -183,6 +183,24 @@ func TestLogin(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 	})
+
+	t.Run("missing required fields", func(t *testing.T) {
+		mockService := new(AuthService)
+		h := handler.NewAuthHandler(mockService)
+		e := newTestEcho()
+
+		reqBody := map[string]string{"name": "Rafael"}
+		jsonBody, _ := json.Marshal(reqBody)
+
+		req := httptest.NewRequest(http.MethodPost, "/login", bytes.NewBuffer(jsonBody))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+
+		err := h.Login(c)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+	})
 }
 
 func TestGetProfile(t *testing.T) {

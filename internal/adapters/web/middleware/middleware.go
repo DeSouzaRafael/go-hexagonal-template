@@ -3,7 +3,6 @@ package middleware
 import (
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/config"
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/core/domain"
@@ -30,10 +29,6 @@ func Middleware(next echo.HandlerFunc) echo.HandlerFunc {
 		})
 		if err != nil || !token.Valid {
 			return c.JSON(http.StatusUnauthorized, domain.ErrInvalidToken)
-		}
-
-		if claims.ExpiresAt.Before(time.Now()) {
-			return c.JSON(http.StatusUnauthorized, domain.ErrExpiredToken)
 		}
 
 		c.Set("user_id", claims.Subject)

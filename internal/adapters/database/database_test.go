@@ -115,6 +115,26 @@ func TestDatabaseAdapter_Close(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "should handle already closed underlying connection",
+			setup: func(t *testing.T) (*DatabaseAdapter, sqlmock.Sqlmock) {
+				sqlDB, mock, err := sqlmock.New()
+				require.NoError(t, err)
+
+				dialector := postgres.New(postgres.Config{
+					Conn:                 sqlDB,
+					PreferSimpleProtocol: true,
+				})
+				db, err := gorm.Open(dialector, &gorm.Config{})
+				require.NoError(t, err)
+
+				mock.ExpectClose()
+				require.NoError(t, sqlDB.Close())
+
+				return &DatabaseAdapter{db: db}, mock
+			},
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range tests {

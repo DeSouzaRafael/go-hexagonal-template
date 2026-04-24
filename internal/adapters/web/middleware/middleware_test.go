@@ -55,6 +55,14 @@ func TestMiddleware(t *testing.T) {
 		assert.Equal(t, http.StatusUnauthorized, rec.Code)
 	})
 
+	t.Run("bearer prefix with empty token", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/protected", nil)
+		req.Header.Set("Authorization", "Bearer ")
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusUnauthorized, rec.Code)
+	})
+
 	userID := uuid.New().String()
 	generator := token.NewJWTTokenGenerator()
 	validToken, _ := generator.GenerateToken(userID)

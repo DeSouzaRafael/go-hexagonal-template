@@ -110,6 +110,22 @@ func TestGetUser(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusNotFound, rec.Code)
 	})
+
+	t.Run("internal error", func(t *testing.T) {
+		userID := uuid.New()
+		mockSvc.On("GetUser", mock.Anything, userID.String()).Return((*domain.User)(nil), domain.ErrInternal)
+
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetPath("/users/:id")
+		c.SetParamNames("id")
+		c.SetParamValues(userID.String())
+
+		err := h.GetUser(c)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusInternalServerError, rec.Code)
+	})
 }
 
 func TestListUsers(t *testing.T) {
@@ -166,6 +182,22 @@ func TestListUsers(t *testing.T) {
 		err := h.ListUsers(c)
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusNotFound, rec.Code)
+		mockSvc.AssertExpectations(t)
+	})
+
+	t.Run("filter by name internal error", func(t *testing.T) {
+		mockSvc := new(MockUserService)
+		h := handler.NewUserHandler(mockSvc)
+
+		mockSvc.On("GetUserByName", mock.Anything, "Error").Return((*domain.User)(nil), domain.ErrInternal)
+
+		req := httptest.NewRequest(http.MethodGet, "/users?name=Error", nil)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+
+		err := h.ListUsers(c)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusInternalServerError, rec.Code)
 		mockSvc.AssertExpectations(t)
 	})
 
@@ -273,6 +305,72 @@ func TestUpdateUser(t *testing.T) {
 		err := h.UpdateUser(c)
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusNotFound, rec.Code)
+		mockSvc.AssertExpectations(t)
+	})
+
+	t.Run("no data to update", func(t *testing.T) {
+		mockSvc := new(MockUserService)
+		h := handler.NewUserHandler(mockSvc)
+
+		userID := uuid.New()
+		mockSvc.On("UpdateUser", mock.Anything, mock.Anything).Return((*domain.User)(nil), domain.ErrNoUpdatedData)
+
+		reqBody := `{"name":"Updated User","password":"newpass123"}`
+		req := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(reqBody))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetPath("/users/:id")
+		c.SetParamNames("id")
+		c.SetParamValues(userID.String())
+
+		err := h.UpdateUser(c)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+		mockSvc.AssertExpectations(t)
+	})
+
+	t.Run("conflicting data", func(t *testing.T) {
+		mockSvc := new(MockUserService)
+		h := handler.NewUserHandler(mockSvc)
+
+		userID := uuid.New()
+		mockSvc.On("UpdateUser", mock.Anything, mock.Anything).Return((*domain.User)(nil), domain.ErrConflictingData)
+
+		reqBody := `{"name":"Updated User","password":"newpass123"}`
+		req := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(reqBody))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetPath("/users/:id")
+		c.SetParamNames("id")
+		c.SetParamValues(userID.String())
+
+		err := h.UpdateUser(c)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusConflict, rec.Code)
+		mockSvc.AssertExpectations(t)
+	})
+
+	t.Run("internal error", func(t *testing.T) {
+		mockSvc := new(MockUserService)
+		h := handler.NewUserHandler(mockSvc)
+
+		userID := uuid.New()
+		mockSvc.On("UpdateUser", mock.Anything, mock.Anything).Return((*domain.User)(nil), domain.ErrInternal)
+
+		reqBody := `{"name":"Updated User","password":"newpass123"}`
+		req := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(reqBody))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetPath("/users/:id")
+		c.SetParamNames("id")
+		c.SetParamValues(userID.String())
+
+		err := h.UpdateUser(c)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusInternalServerError, rec.Code)
 		mockSvc.AssertExpectations(t)
 	})
 }

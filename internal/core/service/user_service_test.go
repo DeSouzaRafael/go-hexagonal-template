@@ -69,6 +69,12 @@ func TestGetUser(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, result)
 	assert.Equal(t, domain.ErrDataNotFound, err)
+
+	// Failure - invalid UUID
+	result, err = service.GetUser(ctx, "not-a-uuid")
+	assert.Error(t, err)
+	assert.Nil(t, result)
+	assert.Equal(t, domain.ErrDataNotFound, err)
 }
 
 func TestGetUserByName(t *testing.T) {
@@ -185,4 +191,9 @@ func TestDeleteUser(t *testing.T) {
 	repo.On("Delete", ctx, id).Return((*domain.User)(nil), domain.ErrDataNotFound).Once()
 	err = service.DeleteUser(ctx, id.String())
 	assert.Error(t, err)
+
+	// Failure - invalid UUID
+	err = service.DeleteUser(ctx, "not-a-uuid")
+	assert.Error(t, err)
+	assert.Equal(t, domain.ErrDataNotFound, err)
 }
