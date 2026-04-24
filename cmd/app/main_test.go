@@ -44,7 +44,6 @@ type MockContainer struct {
 }
 
 func TestRunWithDependencies(t *testing.T) {
-	// Test cases
 	testCases := []struct {
 		name          string
 		setupMocks    func(*MockDatabase, *MockWebServer) (port.Database, ContainerFactory, WebServiceFactory)
@@ -53,20 +52,12 @@ func TestRunWithDependencies(t *testing.T) {
 		{
 			name: "successful run",
 			setupMocks: func(mockDB *MockDatabase, mockWebServer *MockWebServer) (port.Database, ContainerFactory, WebServiceFactory) {
-				// Setup database mock
 				mockDB.On("AutoMigrate", mock.Anything).Return(nil)
-
-				// Setup web server mock
 				mockWebServer.On("Start").Return(nil)
 
-				// Create container factory
 				containerFactory := func(db port.Database) *container.Container {
-					return &container.Container{
-						Handlers: container.Handlers{},
-					}
+					return &container.Container{Handlers: container.Handlers{}}
 				}
-
-				// Create web service factory
 				webServiceFactory := func(h container.Handlers) WebServer {
 					return mockWebServer
 				}
@@ -78,17 +69,11 @@ func TestRunWithDependencies(t *testing.T) {
 		{
 			name: "migration error",
 			setupMocks: func(mockDB *MockDatabase, mockWebServer *MockWebServer) (port.Database, ContainerFactory, WebServiceFactory) {
-				// Setup database mock with error
 				mockDB.On("AutoMigrate", mock.Anything).Return(errors.New("migration error"))
 
-				// Create container factory
 				containerFactory := func(db port.Database) *container.Container {
-					return &container.Container{
-						Handlers: container.Handlers{},
-					}
+					return &container.Container{Handlers: container.Handlers{}}
 				}
-
-				// Create web service factory
 				webServiceFactory := func(h container.Handlers) WebServer {
 					return mockWebServer
 				}
@@ -100,20 +85,12 @@ func TestRunWithDependencies(t *testing.T) {
 		{
 			name: "web server error",
 			setupMocks: func(mockDB *MockDatabase, mockWebServer *MockWebServer) (port.Database, ContainerFactory, WebServiceFactory) {
-				// Setup database mock
 				mockDB.On("AutoMigrate", mock.Anything).Return(nil)
-
-				// Setup web server mock with error
 				mockWebServer.On("Start").Return(errors.New("web server error"))
 
-				// Create container factory
 				containerFactory := func(db port.Database) *container.Container {
-					return &container.Container{
-						Handlers: container.Handlers{},
-					}
+					return &container.Container{Handlers: container.Handlers{}}
 				}
-
-				// Create web service factory
 				webServiceFactory := func(h container.Handlers) WebServer {
 					return mockWebServer
 				}
@@ -124,18 +101,14 @@ func TestRunWithDependencies(t *testing.T) {
 		},
 	}
 
-	// Run test cases
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			// Setup
 			mockDB := new(MockDatabase)
 			mockWebServer := new(MockWebServer)
 			db, containerFactory, webServiceFactory := tc.setupMocks(mockDB, mockWebServer)
 
-			// Execute
 			err := runWithDependencies(db, containerFactory, webServiceFactory)
 
-			// Assert
 			if tc.expectedError != nil {
 				assert.Error(t, err)
 				assert.Equal(t, tc.expectedError.Error(), err.Error())
@@ -143,7 +116,6 @@ func TestRunWithDependencies(t *testing.T) {
 				assert.NoError(t, err)
 			}
 
-			// Verify expectations
 			mockDB.AssertExpectations(t)
 			mockWebServer.AssertExpectations(t)
 		})

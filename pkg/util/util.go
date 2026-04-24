@@ -6,7 +6,7 @@ import (
 )
 
 func CurrentExecutionEnvironmentProduction() bool {
-	return config.AppConfig.App.Environment == "production"
+	return config.AppConfig != nil && config.AppConfig.App.Environment == "production"
 }
 
 func HashPassword(password string) (string, error) {
