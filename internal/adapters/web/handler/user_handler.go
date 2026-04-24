@@ -48,13 +48,16 @@ func (uh *UserHandler) ListUsers(ctx echo.Context) error {
 }
 
 type updateUserRequest struct {
-	Name     string `json:"name" binding:"omitempty,required" example:"Rafa Dev"`
-	Password string `json:"password" binding:"omitempty,required,min=8" example:"12345678"`
+	Name     string `json:"name"     validate:"omitempty,min=1"`
+	Password string `json:"password" validate:"omitempty,min=8"`
 }
 
 func (uh *UserHandler) UpdateUser(ctx echo.Context) error {
 	var req updateUserRequest
 	if err := ctx.Bind(&req); err != nil {
+		return ctx.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
+	}
+	if err := ctx.Validate(&req); err != nil {
 		return ctx.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
 	}
 

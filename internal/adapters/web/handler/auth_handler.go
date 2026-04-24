@@ -19,14 +19,17 @@ func NewAuthHandler(authService port.AuthService) AuthHandler {
 }
 
 type registerRequest struct {
-	Name     string `json:"name" binding:"required" example:"John Doe"`
-	Password string `json:"password" binding:"required,min=8" example:"12345678"`
+	Name     string `json:"name"     validate:"required"`
+	Password string `json:"password" validate:"required,min=8"`
 }
 
 func (ah *AuthHandler) Register(ctx echo.Context) error {
 	var req registerRequest
 	if err := ctx.Bind(&req); err != nil {
-		return ctx.JSON(http.StatusBadRequest, err.Error())
+		return ctx.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
+	}
+	if err := ctx.Validate(&req); err != nil {
+		return ctx.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
 	}
 
 	user := domain.User{
@@ -36,21 +39,24 @@ func (ah *AuthHandler) Register(ctx echo.Context) error {
 
 	_, err := ah.authService.Register(ctx.Request().Context(), &user)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, err.Error())
+		return ctx.JSON(http.StatusInternalServerError, map[string]string{"message": err.Error()})
 	}
 
 	return ctx.JSON(http.StatusCreated, user)
 }
 
 type loginRequest struct {
-	Name     string `json:"name" binding:"required" example:"John Doe"`
-	Password string `json:"password" binding:"required" example:"12345678"`
+	Name     string `json:"name"     validate:"required"`
+	Password string `json:"password" validate:"required"`
 }
 
 func (ah *AuthHandler) Login(ctx echo.Context) error {
 	var req loginRequest
 	if err := ctx.Bind(&req); err != nil {
-		return ctx.JSON(http.StatusBadRequest, err.Error())
+		return ctx.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
+	}
+	if err := ctx.Validate(&req); err != nil {
+		return ctx.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
 	}
 
 	token, err := ah.authService.Login(ctx.Request().Context(), req.Name, req.Password)
@@ -59,4 +65,9 @@ func (ah *AuthHandler) Login(ctx echo.Context) error {
 	}
 
 	return ctx.JSON(http.StatusOK, map[string]string{"token": token})
+}
+
+func (ah *AuthHandler) GetProfile(ctx echo.Context) error {
+	userID := ctx.Get("user_id").(string)
+	return ctx.JSON(http.StatusOK, map[string]string{"user_id": userID})
 }

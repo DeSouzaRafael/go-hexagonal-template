@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/adapters/web/handler"
+	webvalidator "github.com/DeSouzaRafael/go-hexagonal-template/internal/adapters/web/validator"
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/core/domain"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -49,10 +50,16 @@ func (m *MockUserService) DeleteUser(ctx context.Context, id string) error {
 	return args.Error(0)
 }
 
+func newUserTestEcho() *echo.Echo {
+	e := echo.New()
+	e.Validator = webvalidator.New()
+	return e
+}
+
 func TestGetUser(t *testing.T) {
 	mockSvc := new(MockUserService)
 	h := handler.NewUserHandler(mockSvc)
-	e := echo.New()
+	e := newUserTestEcho()
 
 	t.Run("success", func(t *testing.T) {
 		user := &domain.User{
@@ -106,7 +113,7 @@ func TestGetUser(t *testing.T) {
 }
 
 func TestListUsers(t *testing.T) {
-	e := echo.New()
+	e := newUserTestEcho()
 
 	t.Run("success", func(t *testing.T) {
 		mockSvc := new(MockUserService)
@@ -145,8 +152,9 @@ func TestListUsers(t *testing.T) {
 		mockSvc.AssertExpectations(t)
 	})
 }
+
 func TestUpdateUser(t *testing.T) {
-	e := echo.New()
+	e := newUserTestEcho()
 
 	t.Run("success", func(t *testing.T) {
 		mockSvc := new(MockUserService)
@@ -237,7 +245,7 @@ func TestUpdateUser(t *testing.T) {
 }
 
 func TestDeleteUser(t *testing.T) {
-	e := echo.New()
+	e := newUserTestEcho()
 
 	t.Run("success", func(t *testing.T) {
 		mockSvc := new(MockUserService)

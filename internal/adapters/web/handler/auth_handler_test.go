@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/adapters/web/handler"
+	webvalidator "github.com/DeSouzaRafael/go-hexagonal-template/internal/adapters/web/validator"
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/core/domain"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
@@ -30,11 +31,17 @@ func (m *AuthService) Login(ctx context.Context, name, password string) (string,
 	return args.String(0), args.Error(1)
 }
 
+func newTestEcho() *echo.Echo {
+	e := echo.New()
+	e.Validator = webvalidator.New()
+	return e
+}
+
 func TestRegister(t *testing.T) {
 	t.Run("successful registration", func(t *testing.T) {
 		mockService := new(AuthService)
 		h := handler.NewAuthHandler(mockService)
-		e := echo.New()
+		e := newTestEcho()
 
 		reqBody := map[string]string{
 			"name":     "Rafael",
@@ -57,7 +64,7 @@ func TestRegister(t *testing.T) {
 	t.Run("registration error", func(t *testing.T) {
 		mockService := new(AuthService)
 		h := handler.NewAuthHandler(mockService)
-		e := echo.New()
+		e := newTestEcho()
 
 		reqBody := map[string]string{
 			"name":     "Rafael",
@@ -80,11 +87,29 @@ func TestRegister(t *testing.T) {
 	t.Run("invalid binding", func(t *testing.T) {
 		mockService := new(AuthService)
 		h := handler.NewAuthHandler(mockService)
-		e := echo.New()
+		e := newTestEcho()
 
 		invalidBody := []byte(`{"name": 123, "password": true}`)
 
 		req := httptest.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(invalidBody))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+
+		err := h.Register(c)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+	})
+
+	t.Run("missing required fields", func(t *testing.T) {
+		mockService := new(AuthService)
+		h := handler.NewAuthHandler(mockService)
+		e := newTestEcho()
+
+		reqBody := map[string]string{"name": "Rafael"}
+		jsonBody, _ := json.Marshal(reqBody)
+
+		req := httptest.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(jsonBody))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -99,7 +124,7 @@ func TestLogin(t *testing.T) {
 	t.Run("successful login", func(t *testing.T) {
 		mockService := new(AuthService)
 		h := handler.NewAuthHandler(mockService)
-		e := echo.New()
+		e := newTestEcho()
 
 		reqBody := map[string]string{
 			"name":     "Rafael",
@@ -122,7 +147,7 @@ func TestLogin(t *testing.T) {
 	t.Run("login error", func(t *testing.T) {
 		mockService := new(AuthService)
 		h := handler.NewAuthHandler(mockService)
-		e := echo.New()
+		e := newTestEcho()
 
 		reqBody := map[string]string{
 			"name":     "Rafael",
@@ -145,7 +170,7 @@ func TestLogin(t *testing.T) {
 	t.Run("invalid binding", func(t *testing.T) {
 		mockService := new(AuthService)
 		h := handler.NewAuthHandler(mockService)
-		e := echo.New()
+		e := newTestEcho()
 
 		invalidBody := []byte(`{"name": 123, "password": true}`)
 
@@ -158,4 +183,20 @@ func TestLogin(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 	})
+}
+
+func TestGetProfile(t *testing.T) {
+	mockService := new(AuthService)
+	h := handler.NewAuthHandler(mockService)
+	e := newTestEcho()
+
+	req := httptest.NewRequest(http.MethodGet, "/profile", nil)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+	c.Set("user_id", "test-user-id")
+
+	err := h.GetProfile(c)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Contains(t, rec.Body.String(), "test-user-id")
 }
