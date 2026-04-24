@@ -286,6 +286,25 @@ func TestUpdateUser(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 	})
 
+	t.Run("validation error", func(t *testing.T) {
+		mockSvc := new(MockUserService)
+		h := handler.NewUserHandler(mockSvc)
+
+		userID := uuid.New()
+		reqBody := `{"password":"short"}`
+		req := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(reqBody))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetPath("/users/:id")
+		c.SetParamNames("id")
+		c.SetParamValues(userID.String())
+
+		err := h.UpdateUser(c)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+	})
+
 	t.Run("user not found", func(t *testing.T) {
 		mockSvc := new(MockUserService)
 		h := handler.NewUserHandler(mockSvc)
