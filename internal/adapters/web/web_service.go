@@ -8,6 +8,7 @@ import (
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/config"
 	"github.com/labstack/echo/v4"
 	echoMiddleware "github.com/labstack/echo/v4/middleware"
+	echoswagger "github.com/swaggo/echo-swagger"
 )
 
 type WebService struct {
@@ -21,6 +22,8 @@ func NewWebService(h container.Handlers) *WebService {
 
 	e.Use(echoMiddleware.CORSWithConfig(middleware.CorsConfig()))
 	e.Use(echoMiddleware.Recover(), echoMiddleware.Logger())
+
+	e.GET("/swagger/*", echoswagger.WrapHandler)
 
 	g := e.Group("/api")
 

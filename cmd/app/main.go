@@ -1,3 +1,11 @@
+// @title           Go Hexagonal Template API
+// @version         1.0
+// @description     RESTful API template built with Hexagonal Architecture, Echo, and GORM.
+// @host            localhost:8086
+// @BasePath        /api
+// @securityDefinitions.apikey BearerAuth
+// @in              header
+// @name            Authorization
 package main
 
 import (
@@ -11,6 +19,8 @@ import (
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/core/domain"
 	"github.com/DeSouzaRafael/go-hexagonal-template/internal/core/port"
 	"github.com/DeSouzaRafael/go-hexagonal-template/pkg/util"
+
+	_ "github.com/DeSouzaRafael/go-hexagonal-template/docs"
 )
 
 func main() {

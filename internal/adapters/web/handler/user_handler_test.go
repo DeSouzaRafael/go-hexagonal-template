@@ -136,6 +136,39 @@ func TestListUsers(t *testing.T) {
 		mockSvc.AssertExpectations(t)
 	})
 
+	t.Run("filter by name", func(t *testing.T) {
+		mockSvc := new(MockUserService)
+		h := handler.NewUserHandler(mockSvc)
+
+		user := &domain.User{ID: uuid.New(), Name: "Rafa"}
+		mockSvc.On("GetUserByName", mock.Anything, "Rafa").Return(user, nil)
+
+		req := httptest.NewRequest(http.MethodGet, "/users?name=Rafa", nil)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+
+		err := h.ListUsers(c)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusOK, rec.Code)
+		mockSvc.AssertExpectations(t)
+	})
+
+	t.Run("filter by name not found", func(t *testing.T) {
+		mockSvc := new(MockUserService)
+		h := handler.NewUserHandler(mockSvc)
+
+		mockSvc.On("GetUserByName", mock.Anything, "Unknown").Return((*domain.User)(nil), domain.ErrDataNotFound)
+
+		req := httptest.NewRequest(http.MethodGet, "/users?name=Unknown", nil)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+
+		err := h.ListUsers(c)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusNotFound, rec.Code)
+		mockSvc.AssertExpectations(t)
+	})
+
 	t.Run("service error", func(t *testing.T) {
 		mockSvc := new(MockUserService)
 		h := handler.NewUserHandler(mockSvc)

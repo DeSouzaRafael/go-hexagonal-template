@@ -1,119 +1,73 @@
-
 # Go Hexagonal Architecture Template
 
-A robust and scalable template for building Go applications using Hexagonal Architecture (also known as Ports and Adapters).
+A production-ready template for building Go applications using Hexagonal Architecture (Ports and Adapters).
 
 [![Go version](https://img.shields.io/badge/Go-≥1.24-blue)](https://go.dev/)
 [![codecov](https://codecov.io/gh/DeSouzaRafael/go-hexagonal-template/graph/badge.svg?token=Z1GX03OUB2)](https://codecov.io/gh/DeSouzaRafael/go-hexagonal-template)
 [![Go Report Card](https://goreportcard.com/badge/github.com/DeSouzaRafael/go-hexagonal-template)](https://goreportcard.com/report/github.com/DeSouzaRafael/go-hexagonal-template)
-[![License](https://img.shields.io/github/license/evrone/go-clean-template.svg)](https://github.com/DeSouzaRafael/go-hexagonal-template/blob/main/LICENSE)
-[![GitHub Release](https://img.shields.io/github/v/release/DeSouzaRafael/go-hexagonal-template)](https://github.com/DeSouzaRafael/go-hexagonal-template/releases/)
-
-## Table of Contents
-
-- [Overview](#overview)
-- [Features](#features)
-- [Architecture](#architecture)
-- [Project Structure](#project-structure)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-  - [Configuration](#configuration)
-  - [Running the Application](#running-the-application)
-  - [Docker](#docker)
-- [API Documentation](#api-documentation)
-- [Testing](#testing)
-- [Contributing](#contributing)
-- [License](#license)
+[![License](https://img.shields.io/github/license/DeSouzaRafael/go-hexagonal-template)](https://github.com/DeSouzaRafael/go-hexagonal-template/blob/main/LICENSE)
 
 ## Overview
 
-This template provides a foundation for building Go applications using Hexagonal Architecture, which promotes separation of concerns and testability. It includes a complete implementation of user authentication, JWT token generation, and CRUD operations for a user entity.
+This template demonstrates Hexagonal Architecture in Go. The domain has zero framework dependencies — all external concerns (HTTP, database, JWT) are adapters that plug into port interfaces. Swap any adapter without touching business logic.
 
-## Features
+## Stack
 
-- **Hexagonal Architecture**: Clear separation between domain logic and external dependencies
-- **JWT Authentication**: Secure API endpoints with JWT tokens
-- **PostgreSQL Integration**: Database persistence using GORM
-- **RESTful API**: Clean API design with Echo framework
-- **Comprehensive Testing**: High test coverage with mocking
-- **Docker Support**: Easy deployment with Docker and Docker Compose
-- **Configuration Management**: Environment-based configuration
-- **Error Handling**: Consistent error handling throughout the application
+| Concern | Library |
+|---------|---------|
+| HTTP | [Echo v4](https://echo.labstack.com/) |
+| Database | [GORM](https://gorm.io/) + PostgreSQL |
+| Auth | [golang-jwt/jwt v5](https://github.com/golang-jwt/jwt) |
+| Validation | [go-playground/validator v10](https://github.com/go-playground/validator) |
+| API Docs | [Swaggo](https://github.com/swaggo/swag) |
 
 ## Architecture
 
-The application follows the Hexagonal Architecture pattern, which consists of three main layers:
-
-1. **Domain Layer** (`internal/core/domain`): Contains the business entities and logic
-2. **Application Layer** (`internal/core/service`): Implements use cases and orchestrates domain objects
-3. **Infrastructure Layer** (`internal/adapters`): Provides implementations for external dependencies
-
-The communication between these layers is facilitated through ports (interfaces) defined in the `internal/core/port` package.
-
-### Key Architectural Components:
-
-- **Ports**: Interfaces that define how the application interacts with external systems
-- **Adapters**: Implementations of ports that connect to external systems
-- **Domain Models**: Business entities that encapsulate business rules
-- **Services**: Application logic that orchestrates domain objects
-- **Dependency Injection**: Container that wires up all components
-
-## Project Structure
-
 ```
-.
-├── cmd/                  # Application entry points
-│   └── app/              # Main application
-├── internal/             # Private application code
-│   ├── adapters/         # Implementations of ports (infrastructure layer)
-│   │   ├── database/     # Database adapters
-│   │   │   └── repositories/ # Repository implementations
-│   │   └── web/          # Web adapters (HTTP handlers, routers)
-│   │       ├── handler/  # HTTP handlers
-│   │       ├── middleware/ # HTTP middleware
-│   │       ├── router/   # HTTP routers
-│   │       └── token/    # Token generation
-│   ├── core/             # Core business logic
-│   │   ├── domain/       # Domain models and errors
-│   │   ├── port/         # Interfaces (ports)
-│   │   └── service/      # Application services
-│   ├── config/           # Configuration
-│   └── container.go      # Dependency injection container
-├── pkg/                  # Public libraries
-│   └── util/             # Utility functions
-├── .env.example          # Example environment variables
-├── docker-compose.yml    # Docker Compose configuration
-├── Dockerfile            # Docker configuration
-└── README.md             # Project documentation
+cmd/app/
+└── main.go                  # Entry point — wires config, DB, container, server
+
+internal/
+├── container.go             # Manual DI — wires repos → services → handlers
+├── config/                  # Env-based config loading
+├── core/
+│   ├── domain/              # Entities and sentinel errors (no external deps)
+│   ├── port/                # Interfaces (contracts between layers)
+│   └── service/             # Business logic, depends only on ports
+└── adapters/
+    ├── database/
+    │   ├── database.go      # GORM + Postgres connection
+    │   └── repositories/    # Repository implementations
+    └── web/
+        ├── handler/         # HTTP handlers (bind → validate → service → JSON)
+        ├── middleware/       # JWT validation middleware
+        ├── router/          # Route registration
+        ├── token/           # JWT token generation (implements TokenGenerator port)
+        └── validator/       # Echo validator adapter (go-playground/validator)
+
+pkg/util/                    # Generic utilities (bcrypt wrapper, env helpers)
+docs/                        # Auto-generated Swagger docs (swag init)
 ```
+
+**Dependency rule:** arrows point inward. `domain` imports nothing. `service` imports only `domain` and `port`. Adapters import `port`, never each other.
 
 ## Getting Started
 
 ### Prerequisites
 
-- Go 1.24 or higher
+- Go 1.24+
 - PostgreSQL
-- Docker and Docker Compose (optional)
+- Docker (optional)
 
-### Installation
-
-1. Clone the repository:
+### Setup
 
 ```bash
 git clone https://github.com/DeSouzaRafael/go-hexagonal-template.git
 cd go-hexagonal-template
-```
-
-2. Set up the project using the Makefile:
-
-```bash
 make setup
 ```
 
-This will download dependencies and create a `.env` file from the example.
-
-Alternatively, you can do these steps manually:
+Or manually:
 
 ```bash
 go mod download
@@ -122,134 +76,90 @@ cp .env.example .env
 
 ### Configuration
 
-1. Edit the `.env` file to match your environment:
+Edit `.env`:
 
-```
-# Application Settings
+```env
 APP_NAME=go-hexagonal-template
 APP_ENV=development
 
-# Web Server Settings
 WEB_PORT=8086
 WEB_DOMAIN=localhost
 
-# JWT Settings
 JWT_SECRET=your-secret-key
-JWT_EXPIRATION=3600 # 1 hour
+JWT_EXPIRATION=3600
 
-# Database Settings 
-DB_HOST=postgres
-DB_PORT=5440
+DB_HOST=localhost
+DB_PORT=5432
 DB_USER=postgres
 DB_PASS=postgres
 DB_NAME=hexagonal
 DB_SSL_MODE=disable
-DB_LOG_LEVEL=4 # 1 = Silent, 2 = Error, 3 = Warn, 4 = Info
+DB_LOG_LEVEL=4
 ```
 
-### Running the Application
+> `AutoMigrate` only runs when `APP_ENV` is not `production`. Use proper migrations (e.g. [golang-migrate](https://github.com/golang-migrate/migrate)) for production deployments.
 
-To run the application locally:
+### Run
 
 ```bash
+# With real database
 make run
+
+# Without database (in-memory mock — useful for quick local testing)
+go run cmd/app/main.go --mock-db
 ```
-
-Or manually:
-
-```bash
-go run cmd/app/main.go
-```
-
-The API will be available at `http://localhost:8086/api`.
 
 ### Docker
 
-To run the application using Docker:
-
 ```bash
-make docker-up
+make docker-up      # Start app + Postgres
+make docker-down    # Stop containers
+make docker-restart # Restart containers
 ```
 
-Or manually:
+## API
 
-```bash
-docker-compose up -d
-```
+Base path: `http://localhost:8086/api`
 
-This will start the application and a PostgreSQL database.
+Interactive docs: `http://localhost:8086/swagger/index.html`
 
-Other useful Docker commands:
+### Auth
 
-```bash
-make docker-down    # Stop the containers
-make docker-restart # Restart the containers
-```
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/v1/auth/register` | — | Create account |
+| POST | `/v1/auth/login` | — | Get JWT token |
+| GET | `/v1/auth/profile` | Bearer | Current user ID |
 
-## API Documentation
+### Users
 
-### Authentication Endpoints
+All endpoints require `Authorization: Bearer <token>`.
 
-- **Register User**
-  - `POST /api/v1/auth/register`
-  - Request Body: `{ "name": "username", "password": "password" }`
-
-- **Login**
-  - `POST /api/v1/auth/login`
-  - Request Body: `{ "name": "username", "password": "password" }`
-  - Response: `{ "token": "jwt-token" }`
-
-- **Get User Profile**
-  - `GET /api/v1/auth/profile`
-  - Headers: `Authorization: Bearer jwt-token`
-
-### User Endpoints (Protected)
-
-- **Get All Users**
-  - `GET /api/v1/users`
-  - Headers: `Authorization: Bearer jwt-token`
-
-- **Get User by ID**
-  - `GET /api/v1/users/:id`
-  - Headers: `Authorization: Bearer jwt-token`
-
-- **Update User**
-  - `PUT /api/v1/users/:id`
-  - Headers: `Authorization: Bearer jwt-token`
-  - Request Body: `{ "name": "new-username", "password": "new-password" }`
-
-- **Delete User**
-  - `DELETE /api/v1/users/:id`
-  - Headers: `Authorization: Bearer jwt-token`
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/v1/users` | List all users |
+| GET | `/v1/users?name=<name>` | Find user by name |
+| GET | `/v1/users/:id` | Get user by ID |
+| PUT | `/v1/users/:id` | Update user |
+| DELETE | `/v1/users/:id` | Delete user |
 
 ## Testing
 
-The project includes a Makefile with several useful commands for testing and development.
-
-To run all tests:
-
 ```bash
-make test
+make test           # Run all tests
+make test-verbose   # Verbose output
+make coverage       # HTML coverage report
+make coverage-func  # Function-level coverage
 ```
 
-To run tests with verbose output:
+## Regenerating Swagger Docs
+
+After modifying handler annotations:
 
 ```bash
-make test-verbose
-```
-
-To generate a coverage report and view it in a browser:
-
-```bash
-make coverage
-```
-
-To see function-level coverage statistics:
-
-```bash
-make coverage-func
+swag init -g cmd/app/main.go -o docs --parseDependency --parseInternal
 ```
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT — see [LICENSE](LICENSE).
