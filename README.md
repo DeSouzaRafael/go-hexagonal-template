@@ -41,15 +41,15 @@ The application is structured around three concentric layers. Dependencies alway
 |          |                          |                    |
 |   +------+------------- Ports ------+---------+          |
 |   |  AuthService    UserService    UserRepo   |          |
-|   |  TokenGenerator DatabasePort             |          |
+|   |  TokenGenerator DatabasePort              |          |
 |   +---------+--------------------------+------+          |
-|             |       Core              |                  |
-|             |  +------------------+  |                  |
-|             |  | AuthService      |  |                  |
-|             +->| UserService      |<-+                  |
-|                | Domain (User)    |                     |
-|                | Sentinel Errors  |                     |
-|                +------------------+                     |
+|             |       Core             |                   |
+|             |  +------------------+  |                   |
+|             |  | AuthService      |  |                   |
+|             +->| UserService      |<-+                   |
+|                | Domain (User)    |                      |
+|                | Sentinel Errors  |                      |
+|                +------------------+                      |
 +----------------------------------------------------------+
 ```
 
